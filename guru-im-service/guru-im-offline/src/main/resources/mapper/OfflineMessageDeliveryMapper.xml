@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.guru.im.offline.mapper.OfflineMessageDeliveryMapper">
+
+    <resultMap id="BaseResultMap" type="com.guru.im.offline.model.pojo.OfflineMessageDelivery">
+        <id column="id" property="id" />
+        <result column="message_id" property="messageId" />
+        <result column="message_type" property="messageType" />
+        <result column="user_id" property="userId" />
+        <result column="device_id" property="deviceId" />
+        <result column="delivery_status" property="deliveryStatus" />
+        <result column="delivery_count" property="deliveryCount" />
+        <result column="last_delivery_time" property="lastDeliveryTime" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+    </resultMap>
+
+    <resultMap id="DeliveryWithContentInfoMap" type="com.guru.im.offline.model.pojo.OfflineMessageDelivery" extends="BaseResultMap">
+        <!-- 关联离线信息内容 -->
+        <association property="offlineMessageContent" javaType="com.guru.im.offline.model.pojo.OfflineMessageContent">
+            <id column="message_id" property="messageId" />
+            <result column="conversation_type" property="conversationType" />
+            <result column="conversation_id" property="conversationId" />
+            <result column="message_seq" property="messageSeq" />
+            <result column="sender_id" property="senderId" />
+            <result column="receiver_id" property="receiverId" />
+            <result column="message_time" property="messageTime" />
+            <result column="message_type" property="messageType" />
+            <result column="message_content" property="messageContent" />
+            <result column="priority" property="priority" />
+            <result column="expire_time" property="expireTime" />
+            <result column="is_archived" property="isArchived" />
+            <result column="archive_time" property="archiveTime" />
+            <result column="create_time" property="createTime" />
+            <result column="update_time" property="updateTime" />
+        </association>
+    </resultMap>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT *
+        FROM im_offline_message_delivery
+        WHERE id = #{id}
+    </select>
+
+    <insert id="insert" parameterType="com.guru.im.offline.model.pojo.OfflineMessageDelivery">
+        INSERT INTO im_offline_message_delivery (
+            id, message_id, user_id, device_id, delivery_status,
+            delivery_count, last_delivery_time, create_time, update_time
+        ) VALUES (
+                     #{id}, #{messageId}, #{userId}, #{deviceId}, #{deliveryStatus},
+                     #{deliveryCount}, #{lastDeliveryTime}, #{createTime}, #{updateTime}
+                 )
+    </insert>
+
+    <insert id="batchInsert">
+        INSERT INTO im_offline_message_delivery (
+        id, message_id, message_type, user_id, device_id, delivery_status,
+        delivery_count, last_delivery_time, create_time, update_time
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+            #{item.id}, #{item.messageId}, #{item.messageType}, #{item.userId}, #{item.deviceId}, #{item.deliveryStatus},
+            #{item.deliveryCount}, #{item.lastDeliveryTime}, #{item.createTime}, #{item.updateTime}
+            )
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+        delivery_status = VALUES(delivery_status),
+        delivery_count = VALUES(delivery_count),
+        last_delivery_time = VALUES(last_delivery_time),
+        update_time = VALUES(update_time)
+    </insert>
+
+    <update id="updateDeliveryStatus">
+        UPDATE im_offline_message_delivery
+        SET delivery_status = #{deliveryStatus},
+            delivery_count = delivery_count + 1,
+            last_delivery_time = #{updateTime},
+            update_time = #{updateTime}
+        WHERE message_id = #{messageId}
+          AND user_id = #{userId}
+          AND device_id = #{deviceId}
+    </update>
+
+    <update id="batchUpdateDeliveryStatusByMap">
+        UPDATE im_offline_message_delivery
+        SET delivery_status = CASE
+        <foreach collection="statusMap" item="status" index="messageId">
+            WHEN message_id = #{messageId} THEN #{status}
+        </foreach>
+        END,
+        delivery_count = delivery_count + 1,
+        last_delivery_time = #{updateTime},
+        update_time = #{updateTime}
+        WHERE message_id IN
+        <foreach collection="statusMap.keySet()" item="messageId" open="(" separator="," close=")">
+            #{messageId}
+        </foreach>
+    </update>
+
+    <update id="batchUpdateDeliveryStatus">
+        UUPDATE im_offline_message_delivery
+        SET delivery_status = #{deliveryStatus},
+        last_delivery_time =  #{updateTime},
+        update_time = #{updateTime}
+        WHERE user_id = #{userId}
+        device_id = #{deviceId} AND
+        message_id IN
+        <foreach collection="messageIds" item="messageId" open="(" separator="," close=")">
+            #{messageId}
+        </foreach>
+    </update>
+
+    <select id="findUndeliveredMessages" resultMap="BaseResultMap">
+        SELECT *
+        FROM im_offline_message_delivery
+        WHERE user_id = #{userId}
+          AND delivery_status = 0
+          AND delivery_count &lt; #{maxRetryCount}
+        ORDER BY create_time ASC
+            LIMIT #{limit}
+    </select>
+
+    <select id="findByMessageIdAndUser" resultMap="BaseResultMap">
+        SELECT *
+        FROM im_offline_message_delivery
+        WHERE message_id = #{messageId}
+          AND user_id = #{userId}
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="findByUser" resultMap="BaseResultMap">
+        SELECT *
+        FROM im_offline_message_delivery
+        WHERE user_id = #{userId}
+        <if test="deliveryStatus != null">
+            AND delivery_status = #{deliveryStatus}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="findByUserAndDevice" resultMap="BaseResultMap">
+        SELECT *
+        FROM im_offline_message_delivery
+        WHERE user_id = #{userId}
+        AND device_id = #{deviceId}
+        <if test="deliveryStatus != null">
+            AND delivery_status = #{deliveryStatus}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="countUndeliveredByUser" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM im_offline_message_delivery
+        WHERE user_id = #{userId}
+          AND delivery_status = 0
+    </select>
+
+    <delete id="batchDelete">
+        DELETE FROM im_offline_message_delivery
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <delete id="deleteByMessageId">
+        DELETE FROM im_offline_message_delivery
+        WHERE message_id = #{messageId}
+    </delete>
+
+    <update id="updateDeliveryCount">
+        UPDATE im_offline_message_delivery
+        SET delivery_count = #{deliveryCount},
+            last_delivery_time = #{lastDeliveryTime},
+            update_time = UNIX_TIMESTAMP() * 1000
+        WHERE id = #{id}
+    </update>
+
+    <select id="findByMessageId" resultMap="BaseResultMap">
+        SELECT *
+        FROM im_offline_message_delivery
+        WHERE message_id = #{messageId}
+    </select>
+
+    <delete id="deleteByMessageIds">
+        DELETE FROM im_offline_message_delivery
+        WHERE message_id IN
+        <foreach collection="messageIds" item="messageId" open="(" separator="," close=")">
+            #{messageId}
+        </foreach>
+    </delete>
+
+
+    <!-- 核心查询：分页查询指定用户和设备的未投递消息 -->
+    <select id="selectUndeliveredByUserAndDevice" resultMap="DeliveryWithContentInfoMap">
+        SELECT *
+        FROM im_offline_message_delivery delivery
+        left join im_offline_message_content content on delivery.message_id = content.message_id
+        WHERE delivery.user_id = #{userId}
+          AND delivery.device_id = #{deviceId}
+          AND delivery.delivery_status = 0
+        <if test="messageType != null">
+            AND delivery.message_type = #{messageType}
+        </if>
+
+        ORDER BY delivery.create_time ASC
+    </select>
+
+    <!-- 批量更新投递状态 -->
+    <update id="updateDeliveryStatusBatch">
+        UPDATE im_offline_message_delivery
+        SET
+        delivery_status = #{status},
+        <if test="errorReason != null">
+            remark = #{errorReason},
+        </if>
+        delivery_count = delivery_count + 1,
+        last_delivery_time = #{updateTime},
+        update_time = #{updateTime}
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+</mapper>

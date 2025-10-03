@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.guru.im.protocol.model";
+
+import "base.proto";
+
+// 控制消息模型 (control.proto)
+
+// 首次发送消息服务端响应ack
+message ChatMessageAck {
+  int64 message_id = 1;
+  int64 server_seq = 2;
+  int64 timestamp = 3;
+  string client_msg_id = 4;
+
+}
+
+// 已读回执上报
+message ReadReceiptReq {
+  ConversationType conversation_type = 1;
+  int64 conversation_id = 2;
+  int64 read_id = 3;
+  int64 last_read_seq = 4;
+  repeated int64 precise_message_ids = 5; // 用于精确上报特定消息(预留，暂不使用)
+}
+
+// 已读回执通知
+message ReadReceiptNotify {
+  ConversationType conversation_type = 1;
+  int64 conversation_id = 2;
+  int64 read_id = 3;
+  int64 last_read_seq = 4;
+  int64 read_time = 5;
+  int64 global_seq = 6;
+}
+
+// 正在输入状态
+message TypingMessage {
+  bool is_typing = 1;  // true开始输入, false结束输入
+}
+
+// 消息撤回
+message RecallMessage {
+  int64 recalled_message_id = 1; // 被撤回的消息ID
+  string reason = 2;              // 撤回原因
+}
+
+// 心跳
+message HeartbeatMessage {
+  int64 send_time = 1;
+  int64 receive_time = 2;
+}
+
+// 网关服务地址
+message GatewayInfo {
+  string gateway_server_addr = 1;
+}
+
+// 认证
+message AuthMessage {
+  string token = 1;
+  int64 authTime = 2;
+  AuthType auth_type =3;
+  DeviceInfo deviceInfo = 4;
+}
+
+// 下线设备
+message OfflineDeviceMessage {
+  int64 user_id = 1;
+  string deviceId = 2;
+  OfflineDeviceType offline_type = 3;
+}
+
+enum OfflineDeviceType {
+  UNKNOWN_OFFLINE_DEVICE_TYPE = 0;
+  SQUEEZE_OUT = 1; // 被新设备挤下线
+  FORCE_OUT = 2; // 被系统强制下线
+}
+
+enum AuthType {
+  UNKNOWN_AUTH_TYPE = 0;
+  AUTH_LOGIN = 1;
+  AUTH_LOGOUT = 2;
+}

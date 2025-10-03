@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.guru.im.offline.mapper.OfflineMessageContentMapper">
+
+    <resultMap id="BaseResultMap" type="com.guru.im.offline.model.pojo.OfflineMessageContent">
+        <id column="message_id" property="messageId" />
+        <result column="conversation_type" property="conversationType" />
+        <result column="conversation_id" property="conversationId" />
+        <result column="message_seq" property="messageSeq" />
+        <result column="sender_id" property="senderId" />
+        <result column="receiver_id" property="receiverId" />
+        <result column="message_time" property="messageTime" />
+        <result column="message_type" property="messageType" />
+        <result column="message_content" property="messageContent" />
+        <result column="priority" property="priority" />
+        <result column="expire_time" property="expireTime" />
+        <result column="is_archived" property="isArchived" />
+        <result column="archive_time" property="archiveTime" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+    </resultMap>
+
+
+    <insert id="insert" parameterType="com.guru.im.offline.model.pojo.OfflineMessageContent">
+        INSERT INTO im_offline_message_content (
+            message_id, conversation_type, conversation_id, message_seq,
+            sender_id, receiver_id, message_time, message_type,
+            message_content, priority, expire_time, is_archived,
+            archive_time, create_time, update_time
+        ) VALUES (
+                     #{messageId}, #{conversationType}, #{conversationId}, #{messageSeq},
+                     #{senderId}, #{receiverId}, #{messageTime}, #{messageType},
+                     #{messageContent}, #{priority}, #{expireTime}, #{isArchived},
+                     #{archiveTime}, #{createTime}, #{updateTime}
+                 )
+    </insert>
+
+    <select id="findByUserAndConversation" resultMap="BaseResultMap">
+        SELECT *
+        FROM im_offline_message_content
+        WHERE receiver_id = #{userId}
+        <if test="conversationType != null">
+            AND conversation_type = #{conversationType}
+        </if>
+          AND conversation_id = #{conversationId}
+          AND message_seq > #{lastSyncSeq}
+          AND (expire_time IS NULL OR expire_time > #{currentTime})
+        ORDER BY message_seq ASC
+            LIMIT #{limit}
+    </select>
+
+    <insert id="batchInsert">
+        INSERT INTO im_offline_message_content (
+        message_id, conversation_type, conversation_id, message_seq,
+        sender_id, receiver_id, message_time, message_type,
+        message_content, priority, expire_time, is_archived,
+        archive_time, create_time, update_time
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+            #{item.messageId}, #{item.conversationType}, #{item.conversationId}, #{item.messageSeq},
+            #{item.senderId}, #{item.receiverId}, #{item.messageTime}, #{item.messageType},
+            #{item.messageContent}, #{item.priority}, #{item.expireTime}, #{item.isArchived},
+            #{item.archiveTime}, #{item.createTime}, #{item.updateTime}
+            )
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+        update_time = VALUES(update_time)
+    </insert>
+
+    <delete id="deleteExpiredMessages">
+        DELETE FROM im_offline_message_content
+        WHERE expire_time IS NOT NULL AND expire_time &lt;= #{currentTime}
+    </delete>
+
+    <delete id="deleteDeliveredMessages">
+        DELETE FROM im_offline_message_content
+        WHERE message_id IN (
+            SELECT d.message_id
+            FROM im_offline_message_delivery d
+            WHERE d.user_id = #{userId}
+              AND d.delivery_status = 1
+              AND d.message_id = im_offline_message_content.message_id
+        )
+    </delete>
+
+    <select id="findByMessageId" resultMap="BaseResultMap">
+        SELECT *
+        FROM im_offline_message_content
+        WHERE message_id = #{messageId}
+    </select>
+
+    <select id="countByUser" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM im_offline_message_content
+        WHERE receiver_id = #{userId}
+          AND (expire_time IS NULL OR expire_time > UNIX_TIMESTAMP() * 1000)
+    </select>
+
+    <select id="countByUserAndConversation" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM im_offline_message_content
+        WHERE receiver_id = #{userId}
+          AND conversation_id = #{conversationId}
+        <if test="conversationType != null">
+            AND conversation_type = #{conversationType}
+        </if>
+          AND message_seq > #{lastSyncSeq}
+          AND (expire_time IS NULL OR expire_time > UNIX_TIMESTAMP() * 1000)
+    </select>
+
+    <update id="updateArchiveStatus">
+        UPDATE im_offline_message_content
+        SET is_archived = #{isArchived},
+            archive_time = #{archiveTime},
+            update_time = UNIX_TIMESTAMP() * 1000
+        WHERE message_id = #{messageId}
+    </update>
+
+    <update id="batchUpdateExpireTime">
+        UPDATE im_offline_message_content
+        SET expire_time = #{expireTime},
+        update_time = UNIX_TIMESTAMP() * 1000
+        WHERE message_id IN
+        <foreach collection="messageIds" item="messageId" open="(" separator="," close=")">
+            #{messageId}
+        </foreach>
+    </update>
+
+    <delete id="deleteMessages">
+        DELETE FROM im_offline_message_content
+        WHERE message_id IN
+        <foreach collection="messageIds" item="messageId" open="(" separator="," close=")">
+            #{messageId}
+        </foreach>
+    </delete>
+
+    <select id="findMessagesToArchive" resultType="java.lang.Long">
+        SELECT DISTINCT m.message_id
+        FROM im_offline_message_content m
+                 INNER JOIN im_offline_message_delivery d ON m.message_id = d.message_id
+        WHERE m.create_time &lt;= #{archiveTime}
+          AND m.is_archived = 0
+          AND d.delivery_status = 1
+            LIMIT 1000
+    </select>
+
+    <update id="archiveMessages">
+        UPDATE im_offline_message_content
+        SET is_archived = 1,
+        archive_time = #{archiveTime},
+        update_time = #{archiveTime}
+        WHERE message_id IN
+        <foreach collection="messageIds" item="messageId" open="(" separator="," close=")">
+            #{messageId}
+        </foreach>
+    </update>
+
+</mapper>

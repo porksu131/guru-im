@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.guru.im.protocol.model";
+
+import "base.proto";
+import "chat.proto";
+import "control.proto";
+import "notify.proto";
+import "offline_message.proto";
+import "offline_events.proto";
+
+// 最外层消息结构 (message.proto)
+
+message ImMessage {
+  int64 msg_id = 1;
+  int32 version = 2;
+  MsgType msgType = 3;
+  map<string, string> extra_fields = 7;
+
+  MessageType message_type = 8;
+  oneof body {
+    ChatMessage chat_message = 10 ;           // 聊天消息
+
+    TypingMessage typing_message = 51;        // 正在输入
+    RecallMessage recall_message = 52;        // 消息撤回
+    PresenceNotify presence_notify = 54;      // 用户在线状态
+    ReadReceiptReq read_receipt_req = 55;       // 已读回执上报
+    ReadReceiptNotify read_receipt_notify = 56; // 已读回执通知
+
+    AuthMessage auth_message = 70;            // 认证消息
+    HeartbeatMessage heartbeat_message = 71;  // 心跳消息
+    OfflineDeviceMessage offline_device_message = 72;  // 将设备下线消息
+
+    SystemNotice system_notice = 100;         // 系统通知
+    FriendRequestNotify friend_request = 101; // 好友请求
+    GroupInviteNotify group_invite = 102;     // 群邀请
+
+
+    OfflineSyncRequest sync_request = 110;   // 离线会话消息同步请求，由用户发起
+    OfflineSyncResponse sync_response = 111; // 离线会话消息同步响应，由服务端响应
+    OfflineSyncAck sync_ack = 112;           // 离线会话消息同步ack，由用户响应
+
+    SyncEventRequest sync_event_request = 113; // 事件消息同步请求，由用户发起
+    SyncEventResponse sync_event_response = 114; // 事件消息同步响应，由服务端响应
+
+    GatewayInfo gateway_info = 120 ;          // 网关服务地址
+
+    Response response = 200;                  // 通用响应
+  }
+
+  enum MsgType {
+    UNKNOWN_MSG_TYPE = 0;
+    REQUEST = 1;
+    RESPONSE = 2;
+    ONEWAY = 3;
+  }
+}
+
+message Response {
+  int32 code = 1;
+  string msg = 2;
+  bytes data = 3;
+}
+
+

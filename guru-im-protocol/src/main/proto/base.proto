@@ -1,0 +1,125 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.guru.im.protocol.model";
+
+// 基础消息结构 (base.proto)
+enum SerialType {
+  UNKNOWN_SERIAL_TYPE = 0;
+  PROTOBUF = 1;
+  JSON = 2;
+  JAVA_SERIAL = 3;
+}
+
+message DeviceInfo {
+  string device_id = 1;        // 设备ID
+  string device_name = 2;      // 设备名称
+  string client_version = 3;   // 客户端版本
+  PlatformType platform = 4;   // 平台类型
+
+  enum PlatformType {
+    UNKNOWN_PLATFORM = 0;
+    IOS = 1;
+    ANDROID = 2;
+    WINDOWS = 3;
+    MACOS = 4;
+    WEB = 5;
+  }
+}
+
+message UserInfo {
+  int64 userId = 1;
+  string userName = 2;
+}
+
+// 消息类型枚举(按业务分类)
+enum MessageType {
+  UNKNOWN_BUSINESS_MESSAGE_TYPE = 0;
+
+  // 基础消息类型
+  CHAT = 1;         // 聊天消息
+
+  // 控制消息类型
+  ACK = 50;         // 消息回执
+  TYPING = 51;      // 正在输入
+  READ = 52;        // 已读回执
+  RECALL = 53;      // 消息撤回
+  PRESENCE = 54;    // 在线状态
+
+  // 系统消息类型
+  NOTICE = 100;          // 通知
+  FRIEND_REQUEST = 101;  // 好友请求
+  GROUP_INVITE = 102;    // 群邀请
+
+  AUTH = 120;        // 认证
+  HEARTBEAT = 121;   // 心跳
+  OFFLINE_DEVICE = 122; // 下线设备
+
+  OFFLINE_MSG_REQUEST = 110; // 离线消息同步请求，由用户发起
+  OFFLINE_MSG_RESPONSE = 111; // 离线消息同步请求，由用户发起
+  OFFLINE_MSG_ACK = 112; // 离线消息同步ack，由用户响应
+  OFFLINE_EVENT_REQUEST = 113; // 离线事件同步请求，由用户发起
+  OFFLINE_EVENT_RESPONSE = 114; // 离线事件同步请求，由用户发起
+
+  COMMON_RESPONSE = 200; // 通用响应体
+}
+
+// 消息方向
+enum MessageDirection {
+  UNKNOWN_DIRECTION = 0;
+  REQUEST = 1;        // 客户端发送（请求）
+  RESPONSE = 2;     // 服务端推送（响应）
+  NOTIFY_ONEWAY = 3;      // 服务端主动推送通知（单向，无需返回ack确认）
+  NOTIFY_DUPLEX = 4;      // 服务端主动推送通知（双向，需要返回ack确认）
+}
+
+// 会话类型
+enum ConversationType {
+  UNKNOWN_CONVERSATION = 0;
+  PRIVATE = 1;     // 私聊
+  GROUP = 2;       // 群聊
+  SYSTEM = 3;      // 系统消息
+}
+
+// 用户状态枚举
+enum UserPresence {
+  OFFLINE = 0;       // 离线
+  ONLINE = 1;        // 在线
+  AWAY = 2;          // 离开
+  BUSY = 3;          // 忙碌
+  INVISIBLE = 4;     // 隐身
+  CUSTOM = 127;      // 自定义状态
+}
+
+// 状态变更原因
+enum PresenceReason {
+  UNKNOWN_REASON = 0;
+  LOGIN = 1;         // 登录上线
+  LOGOUT = 2;        // 主动退出
+  TIMEOUT = 3;       // 超时离线
+  DEVICE_CHANGE = 4; // 设备切换
+}
+
+// 枚举定义
+enum OfflineSyncType {
+  SYNC_TYPE_UNSPECIFIED = 0;
+  SYNC_TYPE_INCREMENTAL = 1; // 增量同步（默认）
+  SYNC_TYPE_FULL = 2;        // 全量同步（如第一次登录或清除数据后）
+  SYNC_TYPE_MANUAL = 3;      // 用户手动触发的同步
+}
+
+enum OfflineSyncStatus {
+  OFFLINE_SYNC_STATUS_UNSPECIFIED = 0;
+  OFFLINE_SYNC_STATUS_IN_PROGRESS = 1; // 进行中
+  OFFLINE_SYNC_STATUS_PUSHED = 2;   // 已推送MQ
+  OFFLINE_SYNC_STATUS_DELIVERED = 3;      // 已送达
+  OFFLINE_SYNC_STATUS_PUSH_FAILED = 4;      // 推送MQ失败
+  OFFLINE_SYNC_STATUS_DELIVER_FAILED = 5;      // 送达失败
+}
+
+enum SyncStatus {
+  SYNC_STATUS_UNSPECIFIED = 0;
+  SYNC_STATUS_IN_PROGRESS = 1; // 进行中
+  SYNC_STATUS_COMPLETE = 2;   // 已完成
+  SYNC_STATUS_FAILED = 3;      // 同步失败
+}

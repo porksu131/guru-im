@@ -1,0 +1,15 @@
+package com.guru.im.sdk.event;
+
+public enum IMEventType {
+    CONNECTION_CHANGED,
+    CHAT_MESSAGE_RECEIVED,
+    SYNC_MESSAGE_RESPONSE,
+    SYNC_EVENT_RESPONSE,
+    FRIEND_REQUEST_NOTIFY,
+    GROUP_INVITE_NOTIFY,
+    SYSTEM_NOTICE,
+    USER_PRESENCE,
+    READ_RECEIPT,
+    OFFLINE_DEVICE,
+    // 其他事件类型...
+}

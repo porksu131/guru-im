@@ -1,0 +1,161 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.guru.im.protocol.model";
+
+import "base.proto";
+
+message ChatMessage {
+  int64 message_id = 1;                   // 消息唯一ID(由服务端分配)
+  int64 server_seq = 2;                   // 消息序列号(会话级由服务端分配，用于排序)
+  ChatMessageType chat_message_type = 3;  // 消息类型
+  MessageDirection direction = 4;         // 消息方向
+  int64 timestamp = 5;                    // 服务器时间戳(毫秒)
+  int64 client_seq = 6;                   // 客户端序列号
+  string client_msg_id = 7;               // 客户端消息id(格式uuid，用于ack消息关联)
+  int64 client_send_time = 8;             // 客户端消息发送时间
+
+  int64 sender_id = 10;                   // 发送方ID
+  int64 receiver_id = 11;                 // 接收方ID(用户/群组)
+  ConversationType conversation_type = 12; // 会话类型
+  int64 conversation_id = 13;             // 会话ID
+  string conversation_name = 14;          // 会话名称（冗余）
+  DeviceInfo device_info = 15;            // 发送设备信息
+  string trace_id = 16;                   // 全链路追踪ID
+  int64 global_seq = 17;                  // 全局序列号（服务端分配）
+
+  map<string, string> properties = 20;    // 扩展属性
+  repeated int64 at_users = 21;           // @的用户列表
+
+  oneof content {
+    TextContent text_content = 100;
+    EmojiContent emoji_content = 101;
+    ImageContent image_content = 102;
+    VoiceContent voice_content = 103;
+    VideoContent video_content = 104;
+    FileContent file_content = 105;
+    LocationContent location_content = 106;
+  }
+}
+
+enum ChatMessageType {
+  UNKNOWN_CHAT_MESSAGE_TYPE = 0;
+  TEXT = 1;         // 文本
+  IMAGE = 2;        // 图片
+  VOICE = 3;        // 语音
+  VIDEO = 4;        // 视频
+  FILE = 5;         // 文件
+  EMOJI = 6;        // 表情
+  LOCATION = 7;     // 位置
+}
+
+// 文本消息
+message TextContent {
+  string text = 2;
+  TextFormat format = 3;  // 文本格式
+  repeated TextSegment segments = 4; // 富文本分段
+
+  enum TextFormat {
+    PLAIN = 0;
+    MARKDOWN = 1;
+    HTML = 2;
+  }
+
+  message TextSegment {
+    string text = 1;
+    TextStyle style = 2;
+
+    message TextStyle {
+      bool bold = 1;
+      bool italic = 2;
+      string color = 3;
+      string font = 4;
+      int32 size = 5;
+    }
+  }
+}
+
+// 表情消息
+message EmojiContent {
+  string emoji_id = 2;    // 表情包ID
+  string emoji_code = 3;  // 表情编码
+  string caption = 4;     // 表情描述(无障碍)
+  int32 width = 5;        // 显示宽度(px)
+  int32 height = 6;       // 显示高度(px)
+}
+
+// 媒体消息基类
+message MediaContent {
+  int64 file_id = 2;     // 文件服务器ID
+  string file_name = 3;
+  string mime_type = 4;
+  int64 file_size = 5;
+  string file_url = 6;         // 下载URL
+  string thumbnail_url = 7; // 缩略图URL
+  map<string, string> extra_info = 8;
+
+  // 加密信息
+  string encryption_key = 9;
+  string encryption_iv = 10;
+}
+
+// 图片消息
+message ImageContent {
+  MediaContent base = 2;
+  int32 width = 3;        // 原始宽度
+  int32 height = 4;       // 原始高度
+  ImageFormat format = 5;
+
+  enum ImageFormat {
+    UNKNOWN_IMAGE = 0;
+    JPEG = 1;
+    PNG = 2;
+    GIF = 3;
+    WEBP = 4;
+  }
+}
+
+// 语音消息
+message VoiceContent {
+  MediaContent base = 2;
+  int64 duration = 3;     // 时长(毫秒)
+  string codec = 4;       // 编码格式
+  int32 sample_rate = 5;  // 采样率
+  int32 bitrate = 6;     // 比特率(kbps)
+}
+
+// 视频消息
+message VideoContent {
+  MediaContent base = 2;
+  int64 duration = 3;      // 时长(毫秒)
+  int32 width = 4;
+  int32 height = 5;
+  int32 audio_codec = 6;
+  int32 video_codec = 7;
+  int32 audio_bitrate = 8;      // 比特率(kbps)
+  int32 video_bitrate = 9;      // 比特率(kbps)
+}
+
+// 文件消息
+message FileContent {
+  MediaContent base = 2;
+  FileType file_type = 3;
+
+  enum FileType {
+    UNKNOWN_FILE = 0;
+    DOCUMENT = 1;
+    SPREADSHEET = 2;
+    PRESENTATION = 3;
+    ARCHIVE = 4;
+    EXECUTABLE = 5;
+  }
+}
+
+// 位置消息
+message LocationContent {
+  double latitude = 2;
+  double longitude = 3;
+  string title = 4;
+  string address = 5;
+  int32 zoom = 6;         // 地图缩放级别
+}

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.guru.im.user.mapper.GroupInviteNotifyMapper">
+
+    <resultMap id="BaseResultMap" type="com.guru.im.user.model.pojo.GroupInvitePojo">
+        <id column="id" property="id" />
+        <result column="global_seq" property="globalSeq" />
+        <result column="group_id" property="groupId" />
+        <result column="inviter_id" property="inviterId" />
+        <result column="invite_reason" property="inviteReason" />
+        <result column="initial_members_json" property="initialMembersJson" />
+        <result column="delivery_status" property="deliveryStatus" />
+        <result column="expire_time" property="expireTime" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, global_seq, group_id, inviter_id, invite_reason, initial_members_json,
+        delivery_status, expire_time, create_time, update_time
+    </sql>
+
+    <insert id="insert" parameterType="com.guru.im.user.model.pojo.GroupInvitePojo">
+        INSERT INTO im_group_invite_notify (
+            id, global_seq, group_id, inviter_id, invite_reason, initial_members_json,
+            delivery_status, expire_time, create_time, update_time
+        ) VALUES (
+                     #{id}, #{globalSeq}, #{groupId}, #{inviterId}, #{inviteReason}, #{initialMembersJson},
+                     #{deliveryStatus}, #{expireTime}, #{createTime}, #{updateTime}
+                 )
+    </insert>
+
+    <select id="selectById" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM im_group_invite_notify
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectByGroupId" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM im_group_invite_notify
+        WHERE group_id = #{groupId}
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectByInviterId" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM im_group_invite_notify
+        WHERE inviter_id = #{inviterId}
+        ORDER BY create_time DESC
+    </select>
+
+    <update id="updateDeliveryStatus">
+        UPDATE im_group_invite_notify
+        SET delivery_status = #{deliveryStatus},
+            update_time = #{updateTime}
+        WHERE id = #{id}
+    </update>
+
+    <update id="update" parameterType="com.guru.im.user.model.pojo.GroupInvitePojo">
+        UPDATE im_group_invite_notify
+        SET invite_reason = #{inviteReason},
+            initial_members_json = #{initialMembersJson},
+            delivery_status = #{deliveryStatus},
+            expire_time = #{expireTime},
+            update_time = #{updateTime}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById" parameterType="java.lang.Long">
+        DELETE FROM im_group_invite_notify
+        WHERE id = #{id}
+    </delete>
+
+    <select id="selectExpiredNotifies" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM im_group_invite_notify
+        WHERE expire_time &lt;= #{currentTime}
+        AND delivery_status IN (0, 1)  -- 只处理未推送和待送达的状态
+    </select>
+
+    <update id="batchUpdateStatusToExpired">
+        UPDATE im_group_invite_notify
+        SET delivery_status = 2,  -- 推送失败状态代表过期
+        update_time = #{currentTime}
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <select id="selectByStatus" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM im_group_invite_notify
+        WHERE delivery_status = #{deliveryStatus}
+        ORDER BY create_time DESC
+    </select>
+
+</mapper>

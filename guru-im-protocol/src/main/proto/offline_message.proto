@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.guru.im.protocol.model";
+
+import "base.proto";
+
+
+// 同步请求（用户 -> 网关 -> 分发层 -> 离线微服务）
+message OfflineSyncRequest {
+  int64 user_id = 1;
+  string device_id = 2;
+  map<int64, int64> client_cursor_map = 3; // Key: conversation_id, Value: last_synced_seq
+  int64 sync_id = 4; // 客户端生成，用于匹配请求和响应。若为0，则由服务端生成。
+  OfflineSyncType sync_type = 5; // 同步类型
+  int32 batch_size = 6; // 不传按服务端默认值，同时服务端设置最大值，防止客户端恶意设置过大
+  string client_version = 7; // 用于兼容性和问题排查
+  string network_type = 8; // "wired", wifi", "4g", "5g"。服务端可根据网络状况调整策略。
+}
+
+// 同步响应（离线微服务 -> 分发层 -> 网关 -> 用户）
+message OfflineSyncResponse {
+  int64 sync_id = 1;
+  OfflineSyncType sync_type = 2;
+  repeated bytes messages = 3;  // 类型为ImMessage
+  bool has_more = 4;
+  map<int64, int64> server_cursor_map = 5; // 服务端计算出的、本次同步后客户端应处于的位点
+  int64 user_id = 6;
+  string device_id = 7;
+  int32 current_batch = 8;
+  int32 total_count = 9;
+  SyncStatus sync_status = 10; // 使用枚举
+  string error_msg = 11; // 错误信息，sync_status为失败时有效
+  int32 error_code = 12; // 如果错误码为：1-引导至历史拉取
+  int32 total_batches = 13; // 预估批次数量
+  bool final = 14; // 是否最后一批
+
+  bool is_full_sync = 15;                    // 是否全量同步
+  map<int64, int32> conversation_sync_counts = 16; // 各会话同步数量
+  string sync_hint = 17;                     // 同步提示信息
+  int32 max_sync_messages = 18;              // 最大同步消息数限制
+}
+
+// 同步确认（用户 -> 网关 -> 分发层 -> 离线微服务）
+message OfflineSyncAck {
+  int64 sync_id = 1;
+  bool success = 2;
+  int32 received_count = 3; // 客户端实际收到的消息数，用于与服务端的发送数做校验
+  int64 user_id = 4;
+  int32 batch_number = 5;
+  string error_msg = 6;
+  map<int64, int64> confirmed_cursor_map = 7; // 客户端确认更新后的位点
+  repeated int64 received_msg_ids = 8; // 客户端成功收到的消息ID列表，用于精确确认
+  string device_id = 9;
+  int32 error_code = 10;
+  bool final = 14; // 是否最后一批
+  OfflineSyncType sync_type = 15;
+}

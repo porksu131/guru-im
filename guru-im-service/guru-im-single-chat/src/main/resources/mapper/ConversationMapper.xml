@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.guru.im.single.mapper.ConversationMapper">
+
+    <update id="updateLastMessageById">
+        UPDATE im_conversation
+        SET last_message_id      = #{lastMessageId},
+            last_message_time    = #{lastMessageTime},
+            last_message_content = #{lastMessageContent},
+            last_message_sender  = #{lastMessageSender},
+            last_message_seq     = #{lastMessageSeq},
+            update_time          = #{updateTime},
+            version              = version + 1
+        WHERE id = #{id}
+          AND version = #{version} -- 乐观锁控制
+    </update>
+
+
+    <select id="selectVersionById" resultType="java.lang.Long">
+        SELECT version
+        FROM im_conversation
+        WHERE id = #{id}
+    </select>
+
+    <select id="countByConversationId" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM im_conversation
+        WHERE id = #{id}
+    </select>
+
+
+</mapper>

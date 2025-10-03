@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.guru.im.offline.mapper.SyncCursorMapper">
+
+    <resultMap id="BaseResultMap" type="com.guru.im.offline.model.pojo.SyncCursor">
+        <id column="id" property="id" />
+        <result column="user_id" property="userId" />
+        <result column="device_id" property="deviceId" />
+        <result column="conversation_type" property="conversationType" />
+        <result column="conversation_id" property="conversationId" />
+        <result column="last_sync_seq" property="lastSyncSeq" />
+        <result column="last_sync_time" property="lastSyncTime" />
+        <result column="sync_version" property="syncVersion" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, user_id, device_id, conversation_type, conversation_id,
+        last_sync_seq, last_sync_time, sync_version, create_time, update_time
+    </sql>
+
+    <insert id="insert" parameterType="com.guru.im.offline.model.pojo.SyncCursor">
+        INSERT INTO im_sync_cursor (
+        <include refid="Base_Column_List" />
+        ) VALUES (
+        #{id}, #{userId}, #{deviceId}, #{conversationType}, #{conversationId},
+        #{lastSyncSeq}, #{lastSyncTime}, #{syncVersion}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <insert id="upsert" parameterType="com.guru.im.offline.model.pojo.SyncCursor">
+        INSERT INTO im_sync_cursor (
+            id,
+            user_id,
+            device_id,
+            conversation_type,
+            conversation_id,
+            last_sync_seq,
+            last_sync_time,
+            version,
+            create_time,
+            update_time
+        ) VALUES (
+             #{id},
+             #{userId},
+             #{deviceId},
+             #{conversationType},
+             #{conversationId},
+             #{lastSyncSeq},
+             #{lastSyncTime},
+             #{version},
+             #{createTime},
+             #{updateTime}
+         ) ON DUPLICATE KEY UPDATE
+            last_sync_seq = VALUES(last_sync_seq),
+            last_sync_time = VALUES(last_sync_time),
+            version = version + 1,
+            update_time = VALUES(update_time)
+    </insert>
+
+    <update id="update" parameterType="com.guru.im.offline.model.pojo.SyncCursor">
+        UPDATE im_sync_cursor
+        <set>
+            <if test="lastSyncSeq != null">last_sync_seq = #{lastSyncSeq},</if>
+            <if test="lastSyncTime != null">last_sync_time = #{lastSyncTime},</if>
+            <if test="syncVersion != null">sync_version = #{syncVersion},</if>
+            update_time = #{updateTime}
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateCursor">
+        UPDATE im_sync_cursor
+        SET last_sync_seq = #{lastSyncSeq},
+            last_sync_time = #{lastSyncTime},
+            sync_version = #{syncVersion},
+            update_time = #{lastSyncTime}
+        WHERE user_id = #{userId}
+          AND device_id = #{deviceId}
+          AND conversation_type = #{conversationType}
+          AND conversation_id = #{conversationId}
+    </update>
+
+    <select id="selectByUserDeviceConversation" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM im_sync_cursor
+        WHERE user_id = #{userId}
+        AND device_id = #{deviceId}
+        AND conversation_type = #{conversationType}
+        AND conversation_id = #{conversationId}
+    </select>
+
+    <select id="selectByUserDevice" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM im_sync_cursor
+        WHERE user_id = #{userId}
+        AND device_id = #{deviceId}
+        ORDER BY last_sync_time DESC
+    </select>
+
+    <delete id="deleteByUserDevice">
+        DELETE FROM im_sync_cursor
+        WHERE user_id = #{userId}
+          AND device_id = #{deviceId}
+    </delete>
+
+    <delete id="deleteExpiredCursors">
+        DELETE FROM im_sync_cursor
+        WHERE sync_version &lt; #{syncVersion}
+    </delete>
+
+
+    <select id="selectByUniqueKey" resultType="com.guru.im.offline.model.pojo.SyncCursor">
+        SELECT *
+        FROM im_sync_cursor
+        WHERE user_id = #{userId}
+          AND device_id = #{deviceId}
+          AND conversation_type = #{conversationType}
+          AND conversation_id = #{conversationId}
+    </select>
+
+    <insert id="insertOrUpdate">
+        INSERT INTO im_sync_cursor (
+            id, user_id, device_id, conversation_type, conversation_id,
+            last_sync_seq, last_sync_time, sync_version, create_time, update_time
+        ) VALUES (
+                     #{id}, #{userId}, #{deviceId}, #{conversationType}, #{conversationId},
+                     #{lastSyncSeq}, #{lastSyncTime}, #{syncVersion}, #{createTime}, #{updateTime}
+                 ) ON DUPLICATE KEY UPDATE
+            last_sync_seq = VALUES(last_sync_seq),
+            last_sync_time = VALUES(last_sync_time),
+            sync_version = sync_version + 1,
+            update_time = VALUES(update_time)
+    </insert>
+
+    <insert id="batchInsertOrUpdate">
+        INSERT INTO im_sync_cursor (
+        id, user_id, device_id, conversation_type, conversation_id,
+        last_sync_seq, last_sync_time, sync_version, create_time, update_time
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+            #{item.id}, #{item.userId}, #{item.deviceId},
+            #{item.conversationType}, #{item.conversationId},
+            #{item.lastSyncSeq}, #{item.lastSyncTime},
+            #{item.syncVersion}, #{item.createTime}, #{item.updateTime}
+            )
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+        last_sync_seq = VALUES(last_sync_seq),
+        last_sync_time = VALUES(last_sync_time),
+        sync_version = sync_version + 1,
+        update_time = VALUES(update_time)
+    </insert>
+
+    <select id="selectByUserAndDevice" resultType="com.guru.im.offline.model.pojo.SyncCursor">
+        SELECT *
+        FROM im_sync_cursor
+        WHERE user_id = #{userId}
+          AND device_id = #{deviceId}
+        ORDER BY conversation_type, conversation_id
+    </select>
+
+    <delete id="deleteByUniqueKey">
+        DELETE FROM im_sync_cursor
+        WHERE user_id = #{userId}
+          AND device_id = #{deviceId}
+          AND conversation_type = #{conversationType}
+          AND conversation_id = #{conversationId}
+    </delete>
+</mapper>

@@ -1,0 +1,7 @@
+server:
+  port: 10821
+spring:
+  profiles:
+    active: dev
+  application:
+    name: guru-im-auth

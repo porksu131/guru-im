@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.guru.im.offline.mapper.MessageMapper">
+
+    <!-- 查询会话的最近消息（用于全量同步） -->
+    <select id="findRecentMessages" resultType="com.guru.im.offline.model.pojo.Message">
+        SELECT
+            *
+        FROM im_message
+        WHERE
+              conversation_id = #{conversationId}
+          <if test="conversationType != null">
+              AND conversation_type = #{conversationType}
+          </if>
+          AND server_seq <![CDATA[>]]> #{maxSeq}
+          AND status = 1  -- 正常状态的消息
+          AND is_recalled = 0  -- 未撤回的消息
+        ORDER BY server_seq DESC
+            LIMIT #{limit}
+    </select>
+
+    <!-- 查询会话的消息数量（用于判断是否需要历史拉取） -->
+    <select id="countMessages" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM im_message
+        WHERE
+            conversation_id = #{conversationId}
+        <if test="conversationType != null">
+            AND conversation_type = #{conversationType}
+        </if>
+        AND server_seq <![CDATA[>]]> #{maxSeq}
+        AND status = 1
+        AND is_recalled = 0
+    </select>
+
+    <!-- 查询会话的最大序列号 -->
+    <select id="findMaxServerSeq" resultType="java.lang.Long">
+        SELECT MAX(server_seq)
+        FROM im_message
+        WHERE conversation_type = #{conversationType}
+          AND conversation_id = #{conversationId}
+          AND status = 1
+    </select>
+
+</mapper>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.guru.im.single.mapper.UserConversationMapper">
+
+    <update id="incrementUnreadCount">
+        UPDATE im_user_conversation
+        SET unread_count = unread_count + #{increment},
+            update_time = #{updateTime}
+        WHERE user_id = #{userId}
+          AND conversation_id = #{conversationId}
+          AND status = 1
+    </update>
+
+
+</mapper>

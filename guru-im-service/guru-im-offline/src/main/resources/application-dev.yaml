@@ -1,0 +1,72 @@
+spring:
+  cloud:
+    # Nacos 服务发现与注册配置
+    nacos:
+      discovery:
+        server-addr: 192.168.100.130:8848
+        namespace: ${spring.profiles.active}
+      config:
+        server-addr: 192.168.100.130:8848
+        namespace: ${spring.profiles.active}
+  config:
+    import:
+      - optional:nacos:guru-im-offline.yaml
+
+  # mysql连接配置
+  datasource:
+    url: jdbc:mysql://192.168.100.130:3306/guru_im?allowMultiQueries=true&characterEncoding=utf8&connectTimeout=3000&socketTimeout=3000&autoReconnect=true&useSSL=false&allowPublicKeyRetrieval=true
+    username: guru_im
+    password: mysql1234!
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  data:
+    # Redis配置
+    redis:
+      host: 192.168.100.130
+      port: 6379
+      password: redis1234!
+
+# redisson配置（单节点的）
+redisson:
+  #file: classpath:redisson.yaml # 如果你有更复杂的配置，可以指定一个外部 yaml 配置文件
+  # 或者你也可以直接把配置写在这里
+  config: |
+    singleServerConfig:
+      timeout: 3000
+      retryAttempts: 3
+      retryInterval: 1500
+      subscriptionsPerConnection: 5
+      address: "redis://127.0.0.1:6379"
+      password: your_password
+    codec: !<org.redisson.codec.JsonJacksonCodec> {}
+
+
+# mybatis配置
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+
+# rocketMQ配置
+rocketmq:
+  name-server: 192.168.100.130:9876  # NameServer 地址，集群使用';'隔开
+  producer:
+    group: offline-producer-group  # 生产者组名称
+    send-message-timeout: 3000
+    retry-times-when-send-failed: 3
+    retry-next-server: true
+  consumers:
+    offline-group: offline-offline-consumer-group  # 消费者组名称
+    ack-group: offline-ack-consumer-group  # 消费者组名称
+    notify-group: offline-notify-consumer-group  # 消费者组名称
+    sync-group: offline-sync-consumer-group  # 消费者组名称
+    syncAck-group: offline-syncAck-consumer-group  # 消费者组名称
+    common-group: offline-common-consumer-group  # 消费者组名称
+
+
+# 异步配置
+async:
+  offline:
+    core-pool-size: 5
+    max-pool-size: 20
+    queue-capacity: 1000

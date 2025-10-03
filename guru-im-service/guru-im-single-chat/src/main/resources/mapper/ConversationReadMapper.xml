@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.guru.im.single.mapper.ConversationReadMapper">
+
+    <!-- 插入或更新已读位置 -->
+    <insert id="upsertReadPosition">
+        INSERT INTO im_conversation_read (id, user_id, conversation_type, conversation_id, global_seq, last_read_seq,
+                          delivery_status, delivery_time, version, create_time, update_time)
+        VALUES (#{id}, #{userId}, #{conversationType}, #{conversationId}, #{globalSeq}, #{lastReadSeq},
+                          #{deliveryStatus}, #{deliveryTime}, 1, #{createTime}, #{updateTime})
+            ON DUPLICATE KEY UPDATE
+                                 last_read_seq = IF(VALUES(last_read_seq) > last_read_seq, VALUES(last_read_seq), last_read_seq),
+                                 version = version + 1,
+                                 update_time = VALUES(update_time)
+    </insert>
+
+    <!-- 乐观锁更新已读位置 -->
+    <update id="updateReadPositionWithLock">
+        UPDATE im_conversation_read
+        SET last_read_seq = #{newSeq},
+        version = version + 1,
+        update_time = #{updateTime}
+        WHERE user_id = #{userId}
+        AND conversation_type = #{conversationType}
+        AND conversation_id = #{conversationId}
+        AND last_read_seq <![CDATA[ < ]]> #{newSeq}
+    </update>
+
+    <!-- 查询用户的会话已读位置 -->
+    <select id="selectByUserAndConversation" resultType="com.guru.im.single.model.pojo.ConversationRead">
+        SELECT * FROM im_conversation_read
+        WHERE user_id = #{userId}
+          AND conversation_type = #{conversationType}
+          AND conversation_id = #{conversationId}
+    </select>
+
+    <!-- 查询用户所有会话的已读位置 -->
+    <select id="selectByUserId" resultType="com.guru.im.single.model.pojo.ConversationRead">
+        SELECT * FROM im_conversation_read
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 查询会话中所有用户的已读位置 -->
+    <select id="selectByConversation" resultType="com.guru.im.single.model.pojo.ConversationRead">
+        SELECT * FROM im_conversation_read
+        WHERE conversation_type = #{conversationType}
+          AND conversation_id = #{conversationId}
+    </select>
+
+    <!-- 批量查询用户的会话已读位置 -->
+    <select id="selectByUserAndConversations" resultType="com.guru.im.single.model.pojo.ConversationRead">
+        SELECT * FROM im_conversation_read
+        WHERE user_id = #{userId}
+        AND (conversation_type, conversation_id) IN
+        <foreach collection="conversations" item="conv" open="(" separator="," close=")">
+            (#{conv.conversationType}, #{conv.conversationId})
+        </foreach>
+    </select>
+
+    <!-- 删除会话已读记录 -->
+    <delete id="deleteByConversation">
+        DELETE FROM im_conversation_read
+        WHERE conversation_type = #{conversationType}
+          AND conversation_id = #{conversationId}
+    </delete>
+
+    <!-- 更新推送状态 -->
+    <update id="updateDeliveryStatus">
+        UPDATE im_conversation_read
+        SET delivery_status = #{deliveryStatus},
+        delivery_time = #{deliveryTime},
+        update_time = #{updateTime}
+        WHERE id = #{id}
+    </update>
+
+</mapper>

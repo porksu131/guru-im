@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.guru.im.user.mapper.UserConversationMapper">
+
+    <resultMap id="BaseResultMap" type="com.guru.im.user.model.pojo.UserConversation">
+        <id column="id" property="id" />
+        <result column="user_id" property="userId" />
+        <result column="conversation_id" property="conversationId" />
+        <result column="conversation_type" property="conversationType" />
+        <result column="unread_count" property="unreadCount" />
+        <result column="last_read_seq" property="lastReadSeq" />
+        <result column="is_top" property="isTop" />
+        <result column="is_mute" property="isMute" />
+        <result column="show_nickname" property="showNickname" />
+        <result column="status" property="status" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+    </resultMap>
+
+    <resultMap id="UserConversationWithBaseInfoMap" type="com.guru.im.user.model.pojo.UserConversation" extends="BaseResultMap">
+        <result column="conv_key" property="conversationKey" />
+        <result column="conv_type" property="conversationType" />
+        <result column="conv_name" property="conversationName" />
+        <result column="conv_avatar" property="conversationAvatar" />
+        <result column="last_message_id" property="lastMessageId" />
+        <result column="last_message_time" property="lastMessageTime" />
+        <result column="last_message_content" property="lastMessageContent" />
+        <result column="last_message_sender" property="lastMessageSender" />
+        <result column="last_message_seq" property="lastMessageSeq" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, user_id, conversation_id, conversation_type, unread_count,
+        last_read_seq, is_top, is_mute, show_nickname, status,
+        create_time, update_time
+    </sql>
+
+    <insert id="insert" parameterType="com.guru.im.user.model.pojo.UserConversation">
+        INSERT INTO im_user_conversation (
+        <include refid="Base_Column_List" />
+        ) VALUES (
+        #{id}, #{userId}, #{conversationId}, #{conversationType}, #{unreadCount},
+        #{lastReadSeq}, #{isTop}, #{isMute}, #{showNickname}, #{status},
+        #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <insert id="batchInsert">
+        INSERT INTO im_user_conversation (
+        <include refid="Base_Column_List" />
+        ) VALUES
+        <foreach collection="userConversations" item="uc" separator=",">
+            (#{uc.id}, #{uc.userId}, #{uc.conversationId}, #{uc.conversationType}, #{uc.unreadCount},
+            #{uc.lastReadSeq}, #{uc.isTop}, #{uc.isMute}, #{uc.showNickname}, #{uc.status},
+            #{uc.createTime}, #{uc.updateTime})
+        </foreach>
+    </insert>
+
+    <update id="update" parameterType="com.guru.im.user.model.pojo.UserConversation">
+        UPDATE im_user_conversation
+        <set>
+            <if test="conversationType != null">conversation_type = #{conversationType},</if>
+            <if test="unreadCount != null">unread_count = #{unreadCount},</if>
+            <if test="lastReadSeq != null">last_read_seq = #{lastReadSeq},</if>
+            <if test="isTop != null">is_top = #{isTop},</if>
+            <if test="isMute != null">is_mute = #{isMute},</if>
+            <if test="showNickname != null">show_nickname = #{showNickname},</if>
+            <if test="status != null">status = #{status},</if>
+            update_time = #{updateTime}
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateUnreadCount">
+        UPDATE im_user_conversation
+        SET unread_count = #{unreadCount},
+            update_time = #{updateTime}
+        WHERE id = #{id}
+    </update>
+
+    <update id="incrementUnreadCount">
+        UPDATE im_user_conversation
+        SET unread_count = unread_count + #{increment},
+            update_time = #{updateTime}
+        WHERE user_id = #{userId}
+          AND conversation_id = #{conversationId}
+          AND status = 1
+    </update>
+
+    <update id="markAsRead">
+        UPDATE im_user_conversation
+        SET unread_count = 0,
+            last_read_seq = #{lastReadSeq},
+            update_time = #{updateTime}
+        WHERE user_id = #{userId}
+          AND conversation_id = #{conversationId}
+          AND status = 1
+    </update>
+
+    <update id="setConversationTop">
+        UPDATE im_user_conversation
+        SET is_top = #{isTop},
+            update_time = #{updateTime}
+        WHERE user_id = #{userId}
+          AND conversation_id = #{conversationId}
+          AND status = 1
+    </update>
+
+    <update id="setConversationMute">
+        UPDATE im_user_conversation
+        SET is_mute = #{isMute},
+            update_time = #{updateTime}
+        WHERE user_id = #{userId}
+          AND conversation_id = #{conversationId}
+          AND status = 1
+    </update>
+
+    <update id="updateShowNickname">
+        UPDATE im_user_conversation
+        SET show_nickname = #{showNickname},
+            update_time = #{updateTime}
+        WHERE user_id = #{userId}
+          AND conversation_id = #{conversationId}
+          AND status = 1
+    </update>
+
+    <delete id="deleteByUserConversation">
+        DELETE FROM im_user_conversation
+        WHERE user_id = #{userId}
+          AND conversation_id = #{conversationId}
+    </delete>
+
+    <delete id="deleteByUserId">
+        DELETE FROM im_user_conversation
+        WHERE user_id = #{userId}
+    </delete>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM im_user_conversation
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectByUserConversation" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM im_user_conversation
+        WHERE user_id = #{userId}
+        AND conversation_id = #{conversationId}
+        AND status = 1
+    </select>
+
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM im_user_conversation
+        WHERE user_id = #{userId}
+        AND status = 1
+        ORDER BY is_top DESC, update_time DESC
+        <if test="offset != null">
+            OFFSET #{offset}
+        </if>
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <select id="selectTopConversations" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM im_user_conversation
+        WHERE user_id = #{userId}
+        AND is_top = 1
+        AND status = 1
+        ORDER BY update_time DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <select id="selectWithUnreadMessages" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM im_user_conversation
+        WHERE user_id = #{userId}
+        AND unread_count >= #{minUnreadCount}
+        AND status = 1
+        ORDER BY unread_count DESC
+    </select>
+
+    <select id="countByUserId" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM im_user_conversation
+        WHERE user_id = #{userId}
+          AND status = 1
+    </select>
+
+    <select id="sumUnreadCount" resultType="java.lang.Integer">
+        SELECT COALESCE(SUM(unread_count), 0)
+        FROM im_user_conversation
+        WHERE user_id = #{userId}
+          AND status = 1
+    </select>
+
+    <select id="findConversationIdsByUser" resultType="java.lang.Long">
+        SELECT conversation_id
+        FROM im_user_conversation
+        WHERE user_id = #{userId}
+          AND status = 1
+    </select>
+
+
+    <!-- 查询用户会话关系列表（包含基础会话信息） -->
+    <select id="selectUserConversationWithBaseInfo" resultMap="UserConversationWithBaseInfoMap">
+        SELECT
+            uc.*,
+            c.conversation_key as conv_key,
+            c.conversation_type as conv_type,
+            c.conversation_name as conv_name,
+            c.conversation_avatar as conv_avatar,
+            c.last_message_id,
+            c.last_message_time,
+            c.last_message_content,
+            c.last_message_sender,
+            c.last_message_seq
+        FROM im_user_conversation uc
+                 LEFT JOIN im_conversation c ON uc.conversation_id = c.id AND c.status = 1
+        WHERE uc.user_id = #{userId}
+          AND uc.status = 1
+        ORDER BY uc.update_time DESC
+    </select>
+
+    <!-- 批量查询用户会话关系 -->
+    <select id="selectListByUserAndConversationIds" resultMap="BaseResultMap">
+        SELECT *
+        FROM im_user_conversation
+        WHERE user_id = #{userId}
+        AND conversation_id IN
+        <foreach collection="conversationIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND status = 1
+    </select>
+
+
+    <!-- 用户会话相关 -->
+    <insert id="insertUserConversation" parameterType="com.guru.im.user.model.pojo.UserConversation"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO im_user_conversation (
+            id, user_id, conversation_id, conversation_type, unread_count,
+            last_read_seq, is_top, is_mute, show_nickname, status,
+            create_time, update_time
+        ) VALUES (
+                     #{id}, #{userId}, #{conversationId}, #{conversationType}, #{unreadCount},
+                     #{lastReadSeq}, #{isTop}, #{isMute}, #{showNickname}, #{status},
+                     #{createTime}, #{updateTime}
+                 )
+    </insert>
+
+    <select id="selectUserConversation"
+            resultType="com.guru.im.user.model.pojo.UserConversation">
+        SELECT * FROM im_user_conversation
+        WHERE user_id = #{userId} AND conversation_id = #{conversationId} AND status = 1
+    </select>
+
+    <select id="selectUserConversations" parameterType="long"
+            resultType="com.guru.im.user.model.pojo.UserConversation">
+        SELECT uc.*, c.conversation_name, c.conversation_avatar
+        FROM im_user_conversation uc
+                 LEFT JOIN im_conversation c ON uc.conversation_id = c.id
+        WHERE uc.user_id = #{userId} AND uc.status = 1 AND c.status = 1
+        ORDER BY uc.update_time DESC
+    </select>
+</mapper>

@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.guru.im.offline.mapper.SyncSessionMapper">
+    <resultMap id="BaseResultMap" type="com.guru.im.offline.model.pojo.SyncSession">
+        <id column="id" property="id" />
+        <result column="sync_id" property="syncId" />
+        <result column="user_id" property="userId" />
+        <result column="device_id" property="deviceId" />
+        <result column="sync_type" property="syncType" />
+        <result column="sync_strategy" property="syncStrategy" />
+        <result column="total_count" property="totalCount" />
+        <result column="synced_count" property="syncedCount" />
+        <result column="current_batch" property="currentBatch" />
+        <result column="batch_size" property="batchSize" />
+        <result column="sync_status" property="syncStatus" />
+        <result column="start_time" property="startTime" />
+        <result column="end_time" property="endTime" />
+        <result column="last_activity_time" property="lastActivityTime" />
+        <result column="error_message" property="errorMessage" />
+        <result column="sync_start_seq" property="syncStartSeq" />
+        <result column="sync_end_seq" property="syncEndSeq" />
+        <result column="last_synced_seq" property="lastSyncedSeq" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+    </resultMap>
+
+    <insert id="insert" parameterType="com.guru.im.offline.model.pojo.SyncSession">
+        INSERT INTO im_sync_session (
+            id, sync_id, user_id, device_id, sync_type, sync_strategy,
+            total_count, synced_count, current_batch, batch_size, sync_status,
+            start_time, end_time, last_activity_time, error_message,
+            sync_start_seq, sync_end_seq, last_synced_seq, create_time, update_time
+        ) VALUES (
+                     #{id}, #{syncId}, #{userId}, #{deviceId}, #{syncType}, #{syncStrategy},
+                     #{totalCount}, #{syncedCount}, #{currentBatch}, #{batchSize}, #{syncStatus},
+                     #{startTime}, #{endTime}, #{lastActivityTime}, #{errorMessage},
+                     #{syncStartSeq}, #{syncEndSeq}, #{lastSyncedSeq}, #{createTime}, #{updateTime}
+                 )
+    </insert>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT *
+        FROM im_sync_session
+        WHERE id = #{id}
+    </select>
+
+    <select id="findBySyncId" resultMap="BaseResultMap">
+        SELECT *
+        FROM im_sync_session
+        WHERE sync_id = #{syncId}
+    </select>
+
+    <select id="findActiveSessionsByUserAndDevice" resultMap="BaseResultMap">
+        SELECT *
+        FROM im_sync_session
+        WHERE user_id = #{userId}
+          AND device_id = #{deviceId}
+          AND sync_status IN (1, 2) -- 进行中或已推送MQ
+        ORDER BY create_time DESC
+    </select>
+
+    <update id="updateSyncStatus">
+        UPDATE im_sync_session
+        SET sync_status = #{syncStatus},
+            error_message = #{errorMessage},
+            update_time = #{updateTime}
+        WHERE sync_id = #{syncId}
+    </update>
+
+    <update id="updateSyncProgress">
+        UPDATE im_sync_session
+        SET synced_count = #{syncedCount},
+            current_batch = #{currentBatch},
+            last_synced_seq = #{lastSyncedSeq},
+            last_activity_time = #{lastActivityTime},
+            update_time = #{updateTime}
+        WHERE sync_id = #{syncId}
+    </update>
+
+    <update id="completeSyncSession">
+        UPDATE im_sync_session
+        SET sync_status = #{syncStatus},
+            end_time = #{endTime},
+            update_time = #{updateTime},
+            last_activity_time = #{updateTime}
+        WHERE sync_id = #{syncId}
+    </update>
+
+    <select id="findExpiredSessions" resultMap="BaseResultMap">
+        SELECT *
+        FROM im_sync_session
+        WHERE sync_status IN (1, 2) -- 进行中或已推送MQ
+          AND last_activity_time &lt; #{expireTime}
+          AND create_time &lt; #{expireTime}
+    </select>
+
+    <update id="batchUpdateStatus">
+        UPDATE im_sync_session
+        SET sync_status = #{syncStatus},
+        update_time = #{updateTime}
+        WHERE sync_id IN
+        <foreach collection="syncIds" item="syncId" open="(" separator="," close=")">
+            #{syncId}
+        </foreach>
+    </update>
+
+    <select id="countByUserAndStatus" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM im_sync_session
+        WHERE user_id = #{userId}
+        <if test="syncStatus != null">
+            AND sync_status = #{syncStatus}
+        </if>
+    </select>
+
+    <select id="countByUserAndConversation" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM im_offline_message_content
+        WHERE receiver_id = #{userId}
+          AND conversation_type = #{conversationType}
+          AND conversation_id = #{conversationId}
+          AND message_seq > #{lastSyncSeq}
+          AND (expire_time IS NULL OR expire_time > UNIX_TIMESTAMP() * 1000)
+          AND is_archived = 0
+    </select>
+
+    <select id="findSyncStats" resultType="java.util.Map">
+        SELECT
+            sync_id as syncId,
+            sync_status as status,
+            total_count as totalCount,
+            synced_count as syncedCount,
+            current_batch as currentBatch,
+            (total_count - synced_count) as remainingCount,
+            TIMESTAMPDIFF(SECOND, FROM_UNIXTIME(start_time/1000), NOW()) as durationSeconds
+        FROM im_sync_session
+        WHERE sync_id = #{syncId}
+    </select>
+
+</mapper>

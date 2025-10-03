@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.guru.im.single.mapper.MessageMapper">
+
+    <resultMap id="BaseResultMap" type="com.guru.im.single.model.pojo.Message">
+        <id column="id" property="id" />
+        <result column="client_msg_id" property="clientMsgId" />
+        <result column="conversation_type" property="conversationType" />
+        <result column="conversation_id" property="conversationId" />
+        <result column="sender_id" property="senderId" />
+        <result column="receiver_id" property="receiverId" />
+        <result column="message_type" property="messageType" />
+        <result column="message_content" property="messageContent" />
+        <result column="server_seq" property="serverSeq" />
+        <result column="client_seq" property="clientSeq" />
+        <result column="client_send_time" property="clientSendTime" />
+        <result column="at_users" property="atUsers" />
+        <result column="is_recalled" property="isRecalled" />
+        <result column="recall_time" property="recallTime" />
+        <result column="read_count" property="readCount" />
+        <result column="delivery_status" property="deliveryStatus" />
+        <result column="delivery_time" property="deliveryTime" />
+        <result column="retry_count" property="retryCount" />
+        <result column="last_retry_time" property="lastRetryTime" />
+        <result column="status" property="status" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+    </resultMap>
+
+    <insert id="insert" parameterType="com.guru.im.single.model.pojo.Message">
+        INSERT INTO im_message (
+            id, client_msg_id, conversation_type, conversation_id, sender_id, receiver_id,
+            message_type, message_content, server_seq, client_seq, client_send_time, at_users,
+            is_recalled, recall_time, read_count, delivery_status, delivery_time, retry_count,
+            last_retry_time, status, create_time, update_time
+        ) VALUES (
+                     #{id}, #{clientMsgId}, #{conversationType}, #{conversationId}, #{senderId}, #{receiverId},
+                     #{messageType}, #{messageContent}, #{serverSeq}, #{clientSeq}, #{clientSendTime}, #{atUsers},
+                     #{isRecalled}, #{recallTime}, #{readCount}, #{deliveryStatus}, #{deliveryTime}, #{retryCount},
+                     #{lastRetryTime}, #{status}, #{createTime}, #{updateTime}
+                 )
+        ON DUPLICATE KEY UPDATE
+            update_time = VALUES(update_time) -- 发生重复时仅更新时间，主键id不变
+    </insert>
+
+    <insert id="batchInsert">
+        INSERT INTO im_message (
+        id, client_msg_id, conversation_type, conversation_id, sender_id, receiver_id,
+        message_type, message_content, server_seq, client_seq, client_send_time, at_users,
+        is_recalled, recall_time, read_count, delivery_status, delivery_time, retry_count,
+        last_retry_time, status, create_time, update_time
+        ) VALUES
+        <foreach collection="messages" item="message" separator=",">
+            (#{message.id}, #{message.clientMsgId}, #{message.conversationType}, #{message.conversationId},
+            #{message.senderId}, #{message.receiverId}, #{message.messageType}, #{message.messageContent},
+            #{message.serverSeq}, #{message.clientSeq}, #{message.clientSendTime}, #{message.atUsers}, #{message.isRecalled},
+            #{message.recallTime}, #{message.readCount}, #{message.deliveryStatus}, #{message.deliveryTime},
+            #{message.retryCount}, #{message.lastRetryTime}, #{message.status}, #{message.createTime}, #{message.updateTime})
+        </foreach>
+    </insert>
+
+    <update id="update" parameterType="com.guru.im.single.model.pojo.Message">
+        UPDATE im_message
+        <set>
+            <if test="clientMsgId != null">client_msg_id = #{clientMsgId},</if>
+            <if test="conversationType != null">conversation_type = #{conversationType},</if>
+            <if test="conversationId != null">conversation_id = #{conversationId},</if>
+            <if test="senderId != null">sender_id = #{senderId},</if>
+            <if test="receiverId != null">receiver_id = #{receiverId},</if>
+            <if test="messageType != null">message_type = #{messageType},</if>
+            <if test="messageContent != null">message_content = #{messageContent},</if>
+            <if test="serverSeq != null">server_seq = #{serverSeq},</if>
+            <if test="clientSeq != null">client_seq = #{clientSeq},</if>
+            <if test="client_send_time != null">client_send_time = #{clientSendTime},</if>
+            <if test="atUsers != null">at_users = #{atUsers},</if>
+            <if test="isRecalled != null">is_recalled = #{isRecalled},</if>
+            <if test="recallTime != null">recall_time = #{recallTime},</if>
+            <if test="readCount != null">read_count = #{readCount},</if>
+            <if test="deliveryStatus != null">delivery_status = #{deliveryStatus},</if>
+            <if test="deliveryTime != null">delivery_time = #{deliveryTime},</if>
+            <if test="retryCount != null">retry_count = #{retryCount},</if>
+            <if test="lastRetryTime != null">last_retry_time = #{lastRetryTime},</if>
+            <if test="status != null">status = #{status},</if>
+            update_time = #{updateTime}
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <update id="recallMessage">
+        UPDATE im_message
+        SET is_recalled = 1,
+            recall_time = #{recallTime},
+            update_time = #{recallTime}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateReadCount">
+        UPDATE im_message
+        SET read_count = read_count + #{increment},
+            update_time = #{updateTime}
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT * FROM im_message WHERE id = #{id} AND status = 1
+    </select>
+
+    <select id="selectByConversation" resultMap="BaseResultMap">
+        SELECT * FROM im_message
+        WHERE conversation_type = #{conversationType}
+        AND conversation_id = #{conversationId}
+        AND status = 1
+        <if test="startSeq != null">
+            AND server_seq > #{startSeq}
+        </if>
+        ORDER BY server_seq ASC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <select id="getMaxServerSeq" resultType="java.lang.Long">
+        SELECT COALESCE(MAX(server_seq), 0) FROM im_message
+        WHERE conversation_type = #{conversationType}
+          AND conversation_id = #{conversationId}
+          AND status = 1
+    </select>
+
+    <!-- 更新消息的已读计数 -->
+    <update id="incrementReadCount">
+        UPDATE im_message
+        SET read_count = read_count + 1,
+            update_time = #{updateTime}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 批量更新消息的已读计数 -->
+    <update id="batchIncrementReadCount">
+        UPDATE im_message
+        SET read_count = read_count + 1,
+        update_time = #{updateTime}
+        WHERE id IN
+        <foreach collection="messageIds" item="messageId" open="(" separator="," close=")">
+            #{messageId}
+        </foreach>
+    </update>
+
+    <!-- 根据会话和序列号范围更新已读计数 -->
+    <update id="incrementReadCountBySeqRange">
+        UPDATE im_message
+        SET read_count = read_count + 1,
+            update_time = #{updateTime}
+        WHERE conversation_type = #{conversationType}
+          AND conversation_id = #{conversationId}
+          AND server_seq BETWEEN #{startSeq} AND #{endSeq}
+          AND status = 1
+    </update>
+
+    <!-- 获取需要更新已读计数的消息ID列表 -->
+    <select id="selectUnreadMessagesBySeq" resultType="java.lang.Long">
+        SELECT m.id
+        FROM im_message m
+        WHERE m.conversation_type = #{conversationType}
+          AND m.conversation_id = #{conversationId}
+          AND m.server_seq BETWEEN #{startSeq} AND #{endSeq}
+          AND m.status = 1
+    </select>
+
+    <!-- 获取最近非当前用户的消息发送方 -->
+    <select id="selectRecentSenderExcludeUser" resultType="java.lang.Long">
+        SELECT sender_id
+        FROM im_message
+        WHERE conversation_type = #{conversationType}
+          AND conversation_id = #{conversationId}
+          AND status = 1
+          AND sender_id != #{excludeUserId}
+        ORDER BY server_seq DESC
+            LIMIT 1
+    </select>
+
+    <!-- 更新推送状态 -->
+    <update id="updateDeliveryStatus">
+        UPDATE im_message
+        SET delivery_status = #{deliveryStatus},
+            delivery_time = #{deliveryTime},
+            update_time = #{updateTime}
+        WHERE id = #{id}
+    </update>
+
+
+    <!-- 更新推送状态和重试信息 -->
+    <update id="updateDeliveryStatusForRetry">
+        UPDATE im_message
+        SET delivery_status = #{deliveryStatus},
+            delivery_time = #{deliveryTime},
+            retry_count = #{retryCount},
+            last_retry_time = #{lastRetryTime},
+            update_time = #{updateTime}
+        WHERE id = #{id}
+    </update>
+</mapper>

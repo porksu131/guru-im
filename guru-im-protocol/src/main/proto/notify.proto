@@ -1,0 +1,84 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.guru.im.protocol.model";
+
+import "base.proto";
+
+// 系统消息模型 (system.proto)
+
+// 系统通知
+message SystemNotice {
+  NoticeType notice_type = 1;
+  string title = 2;
+  string content = 3;
+  int64 receiver_id = 4;
+  map<string, string> extra =10;
+
+  enum NoticeType {
+    UNKNOWN_NOTICE = 0;
+    FRIEND_ADDED = 1;      // 好友添加
+    GROUP_CREATED = 2;      // 群创建
+    MESSAGE_REJECTED = 3;   // 消息被拒
+    ACCOUNT_WARNING = 4;    // 账号警告
+    GROUP_DISSOLVED = 5;      // 群解散
+    MESSAGE_REVOKED = 6;      // 消息撤回
+    ACCOUNT_LOGOUT = 7;       // 账号登出
+  }
+}
+
+// 好友请求
+message FriendRequestNotify {
+  int64 requester_id = 1;
+  string request_msg = 2;
+  RequestStatus request_status = 3;
+  string requester_name = 5;
+  int64 createTime = 6;
+  RequestType request_type = 7;
+  int64 responder_id = 8;
+  string responder_name = 9;
+  int64 response_time = 10;
+  int64 id = 11;
+  int64 global_seq = 12;
+
+  // 请求类型：1-好友申请，2-拉黑好友，3-删除好友 4-解除拉黑
+  enum RequestType {
+    FRIEND_UNKNOWN = 0;
+    FRIEND_REQUEST = 1;
+    FRIEND_BLACK = 2;
+    FRIEND_DELETE = 3;
+    FRIEND_UN_BLACK = 4;
+  }
+}
+
+// 群邀请
+message GroupInviteNotify {
+  int64 group_id = 1;
+  int64 inviter_id = 2;
+  string invite_reason = 3;
+  RequestStatus request_status = 4;
+  repeated int64 initial_members = 5; // 初始成员列表
+  string group_name = 6 ;
+  string group_avatar = 7;
+  string inviter_name = 8;
+  int64 id = 9;
+  int64 global_seq = 10;
+  int64 create_time = 11;
+}
+
+// 状态变更通知
+message PresenceNotify {
+  int64 user_id = 1;            // 状态变更的用户ID
+  UserPresence status = 2;       // 新状态
+  PresenceReason reason = 3;     // 变更原因
+  int64 last_active = 4;         // 最后活跃时间戳
+  DeviceInfo device = 5;         // 设备信息
+  string custom_status = 6;      // 自定义状态文本
+}
+
+enum RequestStatus {
+  PENDING = 0; // 待处理
+  ACCEPTED = 1; // 已同意
+  REJECTED = 2; // 已拒绝
+  EXPIRED = 3; // 已过期
+}

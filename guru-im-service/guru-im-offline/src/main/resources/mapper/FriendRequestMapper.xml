@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.guru.im.offline.mapper.FriendRequestMapper">
+    <select id="findById" resultType="com.guru.im.offline.model.pojo.FriendRequest">
+        SELECT *
+        FROM im_friend_request
+        WHERE id = #{id}
+    </select>
+    <select id="findByRequester" resultType="com.guru.im.offline.model.pojo.FriendRequest">
+        SELECT *
+        FROM im_friend_request
+        WHERE requester_id = #{requesterId}
+    </select>
+    <select id="findByResponder" resultType="com.guru.im.offline.model.pojo.FriendRequest">
+        SELECT *
+        FROM im_friend_request
+        WHERE responder_id = #{responderId}
+    </select>
+    <select id="checkRequestExists" resultType="int">
+        SELECT COUNT(*) FROM im_friend_request
+        WHERE requester_id = #{requesterId} AND responder_id = #{responderId} AND request_status = 0
+    </select>
+
+    <select id="findByRequesterResponder" resultType="com.guru.im.offline.model.pojo.FriendRequest">
+        SELECT * FROM im_friend_request
+        WHERE requester_id = #{requesterId} AND responder_id = #{responderId} AND request_status = 0
+    </select>
+
+    <insert id="save" parameterType="com.guru.im.offline.model.pojo.FriendRequest">
+        INSERT INTO im_friend_request
+            (id, requester_id, requester_name, responder_id, request_status, request_msg, request_type, notify_status, create_time, update_time)
+        VALUES
+            (#{id}, #{requesterId}, #{requesterName}, #{responderId}, #{requestStatus}, #{requestMsg}, #{requestType}, #{notifyStatus}, #{createTime}, #{updateTime})
+    </insert>
+
+    <update id="updateRequestStatus">
+        UPDATE im_friend_request
+        SET request_status = #{requestStatus}, update_time = #{updateTime}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 批量更新 -->
+    <update id="batchUpdateStatus">
+        UPDATE im_friend_request
+        SET notify_status = #{notifyStatus}, update_time = #{updateTime}
+        WHERE id IN
+        <foreach item="id" collection="ids" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+</mapper>

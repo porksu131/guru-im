@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.guru.im.offline.mapper.OfflineEventMapper">
+
+    <!-- 离线事件内容表基础结果映射 -->
+    <resultMap id="OfflineEventContentMap" type="com.guru.im.offline.model.pojo.OfflineEventContent">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="global_seq" property="globalSeq" jdbcType="BIGINT"/>
+        <result column="event_type" property="eventType" jdbcType="INTEGER"/>
+        <result column="event_content" property="eventContent" jdbcType="BLOB"/>
+        <result column="create_time" property="createTime" jdbcType="INTEGER"/>
+        <result column="update_time" property="updateTime" jdbcType="INTEGER"/>
+        <result column="expire_time" property="expireTime" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <!-- 离线事件投递表基础结果映射 -->
+    <resultMap id="OfflineEventDeliveryMap" type="com.guru.im.offline.model.pojo.OfflineEventDelivery">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="device_id" property="deviceId" jdbcType="VARCHAR"/>
+        <result column="last_sync_seq" property="lastSyncSeq" jdbcType="BIGINT"/>
+        <result column="last_sync_time" property="lastSyncTime" jdbcType="INTEGER"/>
+        <result column="delivery_status" property="deliveryStatus" jdbcType="TINYINT"/>
+        <result column="delivery_count" property="deliveryCount" jdbcType="INTEGER"/>
+        <result column="last_delivery_time" property="lastDeliveryTime" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="INTEGER"/>
+        <result column="update_time" property="updateTime" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <!-- 批量插入事件 -->
+    <insert id="batchInsertEvents" parameterType="list">
+        INSERT INTO im_offline_events_content (
+        id,
+        user_id,
+        global_seq,
+        event_type,
+        event_content,
+        create_time,
+        update_time,
+        expire_time
+        ) VALUES
+        <foreach collection="events" item="event" separator=",">
+            (
+            #{event.id},
+            #{event.userId},
+            #{event.globalSeq},
+            #{event.eventType},
+            #{event.eventContent},
+            #{event.createTime},
+            #{event.updateTime},
+            #{event.expireTime}
+            )
+        </foreach>
+    </insert>
+
+    <!-- 查询用户事件（基于序列号范围） -->
+    <select id="selectEventsByRange" resultMap="OfflineEventContentMap">
+        SELECT
+            id,
+            user_id,
+            global_seq,
+            event_type,
+            event_content,
+            create_time,
+            update_time,
+            expire_time
+        FROM im_offline_events_content
+        WHERE user_id = #{userId}
+          AND global_seq > #{lastSequence}
+        ORDER BY global_seq ASC
+            LIMIT #{limit}
+    </select>
+
+    <!-- 获取用户最大序列号 -->
+    <select id="selectMaxSequence" resultType="java.lang.Long">
+        SELECT COALESCE(MAX(global_seq), 0)
+        FROM im_offline_events_content
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 更新投递状态 -->
+    <update id="updateDeliveryStatus">
+        UPDATE im_offline_events_delivery
+        SET
+            last_sync_seq = #{lastSyncSeq},
+            last_sync_time = #{lastSyncTime},
+            delivery_status = #{deliveryStatus},
+            delivery_count = delivery_count + 1,
+            last_delivery_time = #{lastDeliveryTime},
+            update_time = #{updateTime}
+        WHERE user_id = #{userId}
+          AND device_id = #{deviceId}
+    </update>
+
+    <update id="updateEventsDelivery" parameterType="com.guru.im.offline.model.pojo.OfflineEventDelivery">
+        UPDATE im_offline_events_delivery
+        <set>
+            <if test="lastSyncSeq != null">last_sync_seq = #{lastSyncSeq},</if>
+            <if test="lastSyncTime != null">last_sync_time = #{lastSyncTime},</if>
+            <if test="deliveryStatus != null">delivery_status = #{deliveryStatus},</if>
+            <if test="lastDeliveryTime != null">last_delivery_time = #{lastDeliveryTime},</if>
+            delivery_count = delivery_count + 1,
+            update_time = #{updateTime}
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 插入或更新投递记录 -->
+    <insert id="insertDeliveryRecord" parameterType="com.guru.im.offline.model.pojo.OfflineEventDelivery">
+        INSERT INTO im_offline_events_delivery (
+            id,
+            user_id,
+            device_id,
+            last_sync_seq,
+            last_sync_time,
+            delivery_status,
+            delivery_count,
+            last_delivery_time,
+            create_time,
+            update_time
+        ) VALUES (
+                     #{id},
+                     #{userId},
+                     #{deviceId},
+                     #{lastSyncSeq},
+                     #{lastSyncTime},
+                     #{deliveryStatus},
+                     #{deliveryCount},
+                     #{lastDeliveryTime},
+                     #{createTime},
+                     #{updateTime}
+                 )
+    </insert>
+
+    <!-- 删除过期事件 -->
+    <delete id="deleteExpiredEvents">
+        DELETE FROM im_offline_events_content
+        WHERE expire_time IS NOT NULL
+          AND expire_time &lt;= #{expireTime}
+            LIMIT #{batchSize}
+    </delete>
+
+    <!-- 根据用户ID和设备ID查询投递记录 -->
+    <select id="selectDeliveryRecord" resultMap="OfflineEventDeliveryMap">
+        SELECT
+            id,
+            user_id,
+            device_id,
+            last_sync_seq,
+            last_sync_time,
+            delivery_status,
+            delivery_count,
+            last_delivery_time,
+            create_time,
+            update_time
+        FROM im_offline_events_delivery
+        WHERE user_id = #{userId}
+          AND device_id = #{deviceId}
+    </select>
+
+    <!-- 批量更新投递状态 -->
+    <update id="batchUpdateDeliveryStatus" parameterType="list">
+        <foreach collection="records" item="record" separator=";">
+            UPDATE im_offline_events_delivery
+            SET
+            last_sync_seq = #{record.lastSyncSeq},
+            last_sync_time = #{record.lastSyncTime},
+            delivery_status = #{record.deliveryStatus},
+            delivery_count = delivery_count + 1,
+            last_delivery_time = #{record.lastDeliveryTime},
+            update_time = #{record.updateTime}
+            WHERE user_id = #{record.userId}
+            AND device_id = #{record.deviceId}
+        </foreach>
+    </update>
+
+    <!-- 查询需要重新投递的记录 -->
+    <select id="selectPendingDeliveryRecords" resultMap="OfflineEventDeliveryMap">
+        SELECT
+            id,
+            user_id,
+            device_id,
+            last_sync_seq,
+            last_sync_time,
+            delivery_status,
+            delivery_count,
+            last_delivery_time,
+            create_time,
+            update_time
+        FROM im_offline_events_delivery
+        WHERE delivery_status IN (1, 4, 5)  -- 未投递、推送MQ失败、送达失败
+          AND delivery_count &lt; 5  -- 投递次数少于5次
+          AND (last_delivery_time IS NULL OR last_delivery_time &lt; DATE_SUB(NOW(), INTERVAL 5 MINUTE))
+        ORDER BY user_id, device_id
+            LIMIT #{limit}
+    </select>
+
+    <!-- 获取用户的事件数量统计 -->
+    <select id="selectEventStatsByUser" resultType="map">
+        SELECT
+            user_id as userId,
+            COUNT(*) as totalCount,
+            MAX(global_seq) as maxSequence,
+            MIN(create_time) as earliestTime,
+            MAX(create_time) as latestTime
+        FROM im_offline_events_content
+        WHERE user_id = #{userId}
+        GROUP BY user_id
+    </select>
+
+    <!-- 批量查询用户的最大序列号 -->
+    <select id="batchSelectMaxSequence" resultType="com.guru.im.offline.model.dto.UserSequence">
+        SELECT
+        user_id as userId,
+        COALESCE(MAX(global_seq), 0) as maxSequence
+        FROM im_offline_events_content
+        WHERE user_id IN
+        <foreach collection="userIds" item="userId" open="(" separator="," close=")">
+            #{userId}
+        </foreach>
+        GROUP BY user_id
+    </select>
+
+</mapper>

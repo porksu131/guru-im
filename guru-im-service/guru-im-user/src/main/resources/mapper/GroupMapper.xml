@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.guru.im.user.mapper.GroupMapper">
+
+    <!-- 群组相关 -->
+    <insert id="insertGroup" parameterType="com.guru.im.user.model.pojo.Group"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO im_group (
+            id, group_name, group_avatar, group_owner, group_intro,
+            group_notice, max_members, current_members, group_status,
+            create_time, update_time
+        ) VALUES (
+                     #{id}, #{groupName}, #{groupAvatar}, #{groupOwner}, #{groupIntro},
+                     #{groupNotice}, #{maxMembers}, #{currentMembers}, #{groupStatus},
+                     #{createTime}, #{updateTime}
+                 )
+    </insert>
+
+    <update id="updateGroup" parameterType="com.guru.im.user.model.pojo.Group">
+        UPDATE im_group
+        <set>
+            <if test="groupName != null">group_name = #{groupName},</if>
+            <if test="groupAvatar != null">group_avatar = #{groupAvatar},</if>
+            <if test="groupIntro != null">group_intro = #{groupIntro},</if>
+            <if test="groupNotice != null">group_notice = #{groupNotice},</if>
+            <if test="maxMembers != null">max_members = #{maxMembers},</if>
+            <if test="currentMembers != null">current_members = #{currentMembers},</if>
+            <if test="groupStatus != null">group_status = #{groupStatus},</if>
+            update_time = #{updateTime}
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectGroupById" parameterType="long"
+            resultType="com.guru.im.user.model.pojo.Group">
+        SELECT * FROM im_group WHERE id = #{groupId} AND group_status = 1
+    </select>
+
+    <!-- 群成员相关 -->
+    <insert id="insertGroupMember" parameterType="com.guru.im.user.model.pojo.GroupMember"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO im_group_member (
+            id, group_id, user_id, member_role, join_time,
+            last_ack_seq, member_status, create_time, update_time
+        ) VALUES (
+                     #{id}, #{groupId}, #{userId}, #{memberRole}, #{joinTime},
+                     #{lastAckSeq}, #{memberStatus}, #{createTime}, #{updateTime}
+                 )
+    </insert>
+
+    <select id="selectGroupMembers" parameterType="long"
+            resultType="com.guru.im.user.model.pojo.GroupMember">
+        SELECT * FROM im_group_member
+        WHERE group_id = #{groupId} AND member_status = 1
+        ORDER BY member_role DESC, join_time ASC
+    </select>
+
+
+    <select id="selectUserGroups" parameterType="long"
+            resultType="com.guru.im.user.model.pojo.GroupMember">
+        SELECT gm.*, g.group_name, g.group_avatar, g.group_owner, g.current_members
+        FROM im_group_member gm
+                 LEFT JOIN im_group g ON gm.group_id = g.id
+        WHERE gm.user_id = #{userId} AND gm.member_status = 1 AND g.group_status = 1
+        ORDER BY gm.update_time DESC
+    </select>
+
+    <update id="updateMemberRole">
+        UPDATE im_group_member
+        SET member_role = #{role}, update_time = UNIX_TIMESTAMP() * 1000
+        WHERE group_id = #{groupId} AND user_id = #{userId}
+    </update>
+
+    <update id="updateGroupMember" parameterType="com.guru.im.user.model.pojo.GroupMember">
+        UPDATE im_group_member
+        <set>
+            <if test="memberRole != null">member_role = #{memberRole},</if>
+            <if test="lastAckSeq != null">last_ack_seq = #{lastAckSeq},</if>
+            <if test="memberStatus != null">member_status = #{memberStatus},</if>
+            update_time = #{updateTime}
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="countGroupMembers" parameterType="long" resultType="int">
+        SELECT COUNT(*) FROM im_group_member
+        WHERE group_id = #{groupId} AND member_status = 1
+    </select>
+
+    <select id="selectGroupMember" resultType="com.guru.im.user.model.pojo.GroupMember">
+        SELECT * FROM im_group_member
+        WHERE group_id = #{groupId} AND user_id = #{userId}
+    </select>
+
+</mapper>

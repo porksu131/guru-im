@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.guru.im.protocol.model";
+
+import "base.proto";
+import "offline_message.proto";
+import "notify.proto";
+import "control.proto";
+
+
+// SyncEventRequest 同步事件请求
+message SyncEventRequest {
+  int64 user_id = 1;       // 用户ID
+  string device_id = 2;    // 设备ID
+  int64 last_sequence = 3; // 客户端本地最新序列号
+  int32 sync_size = 4;     // 同步大小
+  OfflineSyncType sync_type = 5; // 同步类型,不传按服务端默认值
+  string client_version = 7; // 用于兼容性和问题排查
+  string network_type = 8; // "wired", wifi", "4g", "5g"。服务端可根据网络状况调整策略。
+}
+
+// SyncResponse 同步事件响应
+message SyncEventResponse {
+  int64 sync_event_id = 1;        // 本次同步ID
+  int64 user_id = 2;              // 用户ID
+  string device_id = 3;           // 设备ID
+  int64 latest_sequence = 4;     // 本次同步后最新的序列号
+  int32 event_type = 5;          // 预留字段，因为当前固定events就是ImMessage类型
+  repeated bytes events = 6;     // 事件列表
+  bool has_more = 7;             // 是否还有更多数据，客户端可基于最新序列号再次发起请求
+  SyncStatus sync_status = 8;   // 同步状态
+  string error_msg = 9;         // 错误信息，sync_status为失败时有效
+}
+
+// 事件定义
+message Event {
+  int64 sequence_id = 1;       // 事件的全局唯一递增序列号
+  oneof content {
+    FriendRequestNotify friend_request = 10; // 好友请求
+    ReadReceiptReq read_receipt_req = 20;    // 已读回执
+  }
+}
+

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.guru.im.user.mapper.FriendRelationMapper">
+    <select id="findFriendsByUid" resultType="com.guru.im.user.model.pojo.FriendRelation">
+        SELECT *
+        FROM im_friend_relation
+        WHERE uid = #{uid}
+    </select>
+    <select id="checkFriendExists" resultType="int">
+        SELECT COUNT(*) FROM im_friend_relation
+        WHERE uid = #{uid} AND friend_id = #{friendId} AND relation_status = 1
+    </select>
+
+    <select id="findByUidFriendId" resultType="com.guru.im.user.model.pojo.FriendRelation">
+        SELECT * FROM im_friend_relation
+        WHERE uid = #{uid} AND friend_id = #{friendId}
+    </select>
+
+    <insert id="save" parameterType="com.guru.im.user.model.pojo.FriendRelation">
+        INSERT INTO im_friend_relation
+            (id, uid, friend_id, user_name, friend_name, relation_status, create_time, update_time)
+        VALUES
+            (#{id}, #{uid}, #{friendId}, #{userName}, #{friendName}, #{relationStatus}, #{createTime}, #{updateTime})
+    </insert>
+
+    <select id="findByUidAndFriendIds" resultType="com.guru.im.user.model.pojo.FriendRelation">
+        SELECT * FROM im_friend_relation WHERE uid = #{userId} AND friend_id IN
+        <foreach item='id' collection='friendIds' open='(' separator=',' close=')'>
+            #{id}",
+        </foreach>"
+    </select>
+
+    <update id="updateRelationStatus">
+        UPDATE im_friend_relation
+        SET relation_status = #{relationStatus}, update_time = #{updateTime}
+        WHERE uid = #{uid} AND friend_id = #{friendId}
+    </update>
+
+    <delete id="deleteByUidFriendId">
+        DELETE FROM im_friend_relation WHERE uid = #{uid} AND friend_id = #{friendId}
+    </delete>
+
+</mapper>

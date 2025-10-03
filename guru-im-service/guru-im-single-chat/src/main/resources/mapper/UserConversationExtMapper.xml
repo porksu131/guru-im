@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.guru.im.single.mapper.UserConversationExtMapper">
+
+    <resultMap id="DetailResultMap" type="com.guru.im.single.model.pojo.UserConversation">
+        <id column="uc_id" property="id" />
+        <result column="user_id" property="userId" />
+        <result column="conversation_id" property="conversationId" />
+        <result column="conversation_type" property="conversationType" />
+        <result column="unread_count" property="unreadCount" />
+        <result column="last_read_seq" property="lastReadSeq" />
+        <result column="is_top" property="isTop" />
+        <result column="is_mute" property="isMute" />
+        <result column="show_nickname" property="showNickname" />
+        <result column="uc_status" property="status" />
+        <result column="uc_create_time" property="createTime" />
+        <result column="uc_update_time" property="updateTime" />
+
+        <association property="conversation" javaType="com.guru.im.single.model.pojo.Conversation">
+            <id column="c_id" property="id" />
+            <result column="c_conversation_type" property="conversationType" />
+            <result column="conversation_key" property="conversationKey" />
+            <result column="conversation_name" property="conversationName" />
+            <result column="conversation_avatar" property="conversationAvatar" />
+            <result column="last_message_id" property="lastMessageId" />
+            <result column="last_message_time" property="lastMessageTime" />
+            <result column="last_message_content" property="lastMessageContent" />
+            <result column="last_message_sender" property="lastMessageSender" />
+            <result column="c_status" property="status" />
+            <result column="c_create_time" property="createTime" />
+            <result column="c_update_time" property="updateTime" />
+        </association>
+    </resultMap>
+
+    <sql id="Detail_Column_List">
+        uc.id as uc_id, uc.user_id, uc.conversation_id, uc.conversation_type,
+        uc.unread_count, uc.last_read_seq, uc.is_top, uc.is_mute, uc.show_nickname,
+        uc.status as uc_status, uc.create_time as uc_create_time, uc.update_time as uc_update_time,
+
+        c.id as c_id, c.conversation_type as c_conversation_type, c.conversation_key,
+        c.conversation_name, c.conversation_avatar, c.last_message_id, c.last_message_time,
+        c.last_message_content, c.last_message_sender, c.status as c_status,
+        c.create_time as c_create_time, c.update_time as c_update_time
+    </sql>
+
+    <select id="selectWithConversation" resultMap="DetailResultMap">
+        SELECT <include refid="Detail_Column_List" />
+        FROM im_user_conversation uc
+        INNER JOIN im_conversation c ON uc.conversation_id = c.id
+        WHERE uc.user_id = #{userId}
+        AND uc.status = 1
+        AND c.status = 1
+        ORDER BY uc.is_top DESC, c.last_message_time DESC
+        <if test="offset != null">
+            OFFSET #{offset}
+        </if>
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <select id="selectDetailByUserConversation" resultMap="DetailResultMap">
+        SELECT <include refid="Detail_Column_List" />
+        FROM im_user_conversation uc
+        INNER JOIN im_conversation c ON uc.conversation_id = c.id
+        WHERE uc.user_id = #{userId}
+        AND uc.conversation_id = #{conversationId}
+        AND uc.status = 1
+        AND c.status = 1
+    </select>
+
+    <select id="selectTopConversationsWithDetail" resultMap="DetailResultMap">
+        SELECT <include refid="Detail_Column_List" />
+        FROM im_user_conversation uc
+        INNER JOIN im_conversation c ON uc.conversation_id = c.id
+        WHERE uc.user_id = #{userId}
+        AND uc.is_top = 1
+        AND uc.status = 1
+        AND c.status = 1
+        ORDER BY c.last_message_time DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <update id="incrementUnreadCount">
+        UPDATE im_user_conversation
+        SET unread_count = unread_count + 1,
+            update_time = #{updateTime}
+        WHERE user_id = #{userId}
+          AND conversation_id = #{conversationId}
+          AND status = 1
+    </update>
+
+</mapper>
