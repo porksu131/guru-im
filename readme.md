@@ -18,8 +18,8 @@
 - [X] 音频通话
 - [X] 视频通话
 - [X] 桌面共享
-- [ ] 多人会议(待增加)
-- [ ] js sdk + electron + vue3(待完成)
+- [ ] 多人会议
+- [ ] js sdk + electron + vue3
 
 ## 效果展示
 **流水线部署**
@@ -99,7 +99,6 @@
 |   |   `-- src
 |   |-- guru-im-mediasoup
 |   |-- guru-im-protocol
-|   |   |-- guru-im-protocol.iml
 |   |   |-- pom.xml
 |   |   `-- src
 |   |-- guru-im-sdk-java
