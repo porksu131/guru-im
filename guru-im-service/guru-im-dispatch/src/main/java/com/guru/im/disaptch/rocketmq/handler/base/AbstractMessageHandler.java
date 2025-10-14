@@ -170,7 +170,7 @@ public abstract class AbstractMessageHandler implements MessageHandler {
             return;
         }
 
-        log.info("user={}, device=[{}], is offline, but message un need stored: {}", uid,
+        log.info("user={}, device=[{}], is offline, and message is not need to store: {}", uid,
                 String.join(",", deviceIds),
                 envelope.getMessageId());
     }

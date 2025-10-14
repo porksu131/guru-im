@@ -1,0 +1,19 @@
+{
+  "name": "mediasoup-media-server",
+  "version": "1.0.0",
+  "description": "Pure media server without signaling",
+  "main": "media-server.js",
+  "scripts": {
+    "start": "node media-server.js",
+    "dev": "nodemon media-server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mediasoup": "^3.11.9",
+    "cors": "^2.8.5",
+    "winston": "^3.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

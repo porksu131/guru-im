@@ -9,6 +9,7 @@ import "control.proto";
 import "notify.proto";
 import "offline_message.proto";
 import "offline_events.proto";
+import "signal_base.proto";
 
 // 最外层消息结构 (message.proto)
 
@@ -45,6 +46,8 @@ message ImMessage {
     SyncEventResponse sync_event_response = 114; // 事件消息同步响应，由服务端响应
 
     GatewayInfo gateway_info = 120 ;          // 网关服务地址
+
+    SignalingMessage signaling_message = 150; // 多媒体通信的信令消息
 
     Response response = 200;                  // 通用响应
   }

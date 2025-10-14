@@ -214,7 +214,7 @@ public class GroupChatCreateDialog extends JDialog {
             infoPanel.add(nameLabel, BorderLayout.CENTER);
             infoPanel.add(statusLabel, BorderLayout.SOUTH);
 
-            // 右侧：复选框 - 修复显示问题
+            // 右侧：复选框
             checkBox = new JCheckBox();
             checkBox.setOpaque(false);
             checkBox.setFocusPainted(false);

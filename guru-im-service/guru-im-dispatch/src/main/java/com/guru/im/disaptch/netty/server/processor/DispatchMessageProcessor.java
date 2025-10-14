@@ -9,9 +9,7 @@ import com.guru.im.core.common.constant.ResponseCode;
 import com.guru.im.core.common.processor.MessageProcessor;
 import com.guru.im.mq.starter.core.MQMessageSender;
 import com.guru.im.mq.starter.core.message.MQMessageWrapper;
-import com.guru.im.protocol.model.ChatMessageAck;
-import com.guru.im.protocol.model.ImMessage;
-import com.guru.im.protocol.model.Response;
+import com.guru.im.protocol.model.*;
 import com.guru.im.protocol.util.MessageBuilder;
 import com.guru.im.protocol.util.MessageUpdater;
 import io.netty.channel.ChannelHandlerContext;
@@ -45,6 +43,9 @@ public class DispatchMessageProcessor implements MessageProcessor {
             if (isChatMessage(request)) {
                 request = fillChatMessageIds(request);
                 response = buildChatMessageAckResponse(request);
+            } else if (isSignalingMessage(request)) {
+                request = fillSignalIds(request);
+                response = buildSignalMessageAckResponse(request);
             }
 
             // 发送消息到MQ
@@ -91,16 +92,28 @@ public class DispatchMessageProcessor implements MessageProcessor {
         return message.getBodyCase() == ImMessage.BodyCase.CHAT_MESSAGE;
     }
 
+    private boolean isSignalingMessage(ImMessage message) {
+        return message.getBodyCase() == ImMessage.BodyCase.SIGNALING_MESSAGE;
+    }
+
+
     private ImMessage fillChatMessageIds(ImMessage message) {
         long messageId = snowflakeIdGenerator.nextId();
         long serverSeq = sequenceIdGenerator.nextConversationSeq(message.getChatMessage().getConversationId());
         return MessageUpdater.updateSequenceIds(message, messageId, serverSeq);
     }
 
+    private ImMessage fillSignalIds(ImMessage request) {
+        long messageId = snowflakeIdGenerator.nextId();
+        long sessionId = snowflakeIdGenerator.nextId();
+        return MessageUpdater.updateSequenceIdsForSignal(request, messageId, sessionId);
+    }
+
     private Response buildChatMessageAckResponse(ImMessage updatedMessage) {
         ChatMessageAck chatMessageAck = ChatMessageAck.newBuilder()
                 .setMessageId(updatedMessage.getChatMessage().getMessageId())
                 .setServerSeq(updatedMessage.getChatMessage().getServerSeq())
+                .setTimestamp(updatedMessage.getChatMessage().getTimestamp())
                 .setClientMsgId(updatedMessage.getChatMessage().getClientMsgId())
                 .build();
 
@@ -110,10 +123,26 @@ public class DispatchMessageProcessor implements MessageProcessor {
                 .build();
     }
 
+    private Response buildSignalMessageAckResponse(ImMessage updatedMessage) {
+        SignalMessageAck signalMessageAck = SignalMessageAck.newBuilder()
+                .setMessageId(updatedMessage.getSignalingMessage().getMessageId())
+                .setSessionId(updatedMessage.getSignalingMessage().getSessionId())
+                .setTimestamp(updatedMessage.getSignalingMessage().getTimestamp())
+                .build();
+
+        return MessageBuilder.createResponse(ResponseCode.SUCCESS, "消息已成功发往消息队列")
+                .toBuilder()
+                .setData(signalMessageAck.toByteString())
+                .build();
+    }
+
     private SendResult sendMessageToMQ(ImMessage message, MQMessageWrapper wrapper) {
         if (isChatMessage(message)) {
             return mqMessageSender.sendOrderly(wrapper,
                     String.valueOf(message.getChatMessage().getConversationId()));
+        } else if (isSignalingMessage(message)) {
+            return mqMessageSender.sendOrderly(wrapper,
+                    String.valueOf(message.getSignalingMessage().getSessionId()));
         } else {
             return mqMessageSender.sendSync(wrapper);
         }

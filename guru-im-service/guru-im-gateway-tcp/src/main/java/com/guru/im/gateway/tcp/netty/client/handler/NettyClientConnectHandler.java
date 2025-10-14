@@ -67,6 +67,8 @@ public class NettyClientConnectHandler extends ChannelDuplexHandler {
 
         ChannelAttributeUtils.setGatewayInfo(ctx.channel(), gatewayInfo);
 
+        LOGGER.info("gatewayInfo already send to dispatch when channel Active");
+
         super.channelActive(ctx);
 
         if (nettyEventExecutor.getChannelEventListeners() != null) {

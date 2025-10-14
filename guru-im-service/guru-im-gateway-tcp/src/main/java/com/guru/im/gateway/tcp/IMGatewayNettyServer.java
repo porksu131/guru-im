@@ -5,6 +5,7 @@ import com.guru.im.core.common.event.ChannelEventListener;
 import com.guru.im.core.common.event.NettyEventExecutor;
 import com.guru.im.core.common.processor.MessageProcessor;
 import com.guru.im.core.common.thread.ThreadFactoryImpl;
+import com.guru.im.core.common.util.ChannelUtil;
 import com.guru.im.core.server.BaseNettyServer;
 import com.guru.im.core.server.config.NettyServerConfig;
 import com.guru.im.core.starter.SpringBeanUtils;
@@ -181,6 +182,10 @@ public abstract class IMGatewayNettyServer extends BaseNettyServer {
     protected void initChannelEventListener() {
         List<ChannelEventListener> channelEventListeners = SpringBeanUtils.getBeansOfType(ChannelEventListener.class);
         channelEventListeners.forEach(this.nettyEventExecutor::registerListener);
+    }
+
+    public String getLocalServerAddress() {
+        return ChannelUtil.getLocalHost() + ":" + getLocalServerPort();
     }
 
     public int getLocalServerPort() {

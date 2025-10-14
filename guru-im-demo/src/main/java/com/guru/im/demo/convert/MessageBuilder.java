@@ -45,7 +45,7 @@ public class MessageBuilder {
         Message message = new Message();
         message.setMessageId(-1L);
         message.setServerSeq(-1L);
-        message.setReceiverId(extractReceiverId(currentUser.getUid(), userConversation));
+        message.setReceiverId(UserConversation.extractReceiverId(currentUser.getUid(), userConversation));
         message.setReceiverName(userConversation.getConversationName());
         message.setSenderId(currentUser.getUid());
         message.setSenderName(currentUser.getUserName());
@@ -100,26 +100,6 @@ public class MessageBuilder {
                 return MessageType.VIDEO;
             default:
                 return MessageType.FILE;
-        }
-    }
-
-
-    public static Long extractReceiverId(long userId, UserConversation userConversation) {
-        try {
-            if (userConversation.getConversationType() == ConversationType.PRIVATE_VALUE) {
-                List<Long> userIds = Arrays.stream(userConversation.getConversationKey().split("_")).map(Long::parseLong)
-                        .toList();
-                if (userIds.get(0) == userId) {
-                    return userIds.get(1);
-                }
-                return userIds.get(0);
-            } else {
-                String groupIdStr = userConversation.getConversationKey().substring(userConversation.getConversationKey().indexOf("_") + 1);
-                return Long.parseLong(groupIdStr);
-            }
-
-        } catch (Exception e) {
-            throw new RuntimeException("get receiverId by conversionKey failed [" + userConversation.getConversationKey() + "]:" + e.getMessage());
         }
     }
 

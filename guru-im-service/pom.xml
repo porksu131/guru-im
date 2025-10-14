@@ -25,6 +25,7 @@
         <module>guru-im-gateway-http</module>
         <module>guru-im-job</module>
         <module>guru-im-group-chat</module>
+        <module>guru-im-signal</module>
     </modules>
 
     <properties>

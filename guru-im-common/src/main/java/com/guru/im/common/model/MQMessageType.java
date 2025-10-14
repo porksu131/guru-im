@@ -9,5 +9,6 @@ public enum MQMessageType {
     CONTROL,
     BATCH_SYNC,
     ACK,
-    BATCH_ACK
+    BATCH_ACK,
+    SIGNAL
 }

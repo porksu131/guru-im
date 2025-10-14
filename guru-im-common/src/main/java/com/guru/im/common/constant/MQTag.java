@@ -9,4 +9,5 @@ public class MQTag {
     public static final String BATCH_SYNC = "batch-sync";
     public static final String BATCH_ACK = "batch-ack";
     public static final String OFFLINE = "offline";
+    public static final String SIGNAL = "signal";
 }

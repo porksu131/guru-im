@@ -26,6 +26,7 @@ public class IMMessageProcessor implements MessageProcessor {
     public void processOneway(ChannelHandlerContext ctx, ImMessage request) throws Exception {
         if (messageListener != null) {
             messageListener.onOnewayMessage(request);
+            return;
         }
         throw new RuntimeException("Message processing failed, no message listener available");
     }

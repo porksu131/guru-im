@@ -1,0 +1,473 @@
+/* 视频通话专用样式 */
+.video-call-container {
+    width: 100%;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    padding: 0 20px; /* 添加左右间距 */
+    box-sizing: border-box;
+}
+
+/* 头部样式改进 */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 0;
+    color: white;
+    position: relative;
+    z-index: 20;
+}
+
+.call-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    opacity: 0.9;
+}
+
+.timer {
+    font-size: 1.3rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 8px 16px;
+    border-radius: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    min-width: 80px;
+    text-align: center;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 1px;
+}
+
+/* 内容区域 */
+.content-area {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 0; /* 调整上下间距 */
+    margin: 0 -20px; /* 抵消容器的padding */
+}
+
+/* 远程视频容器 */
+.remote-video-container {
+    width: calc(100% - 40px); /* 考虑左右间距 */
+    height: 100%;
+    max-width: 800px;
+    max-height: 600px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 20px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    margin: 0 auto; /* 居中显示 */
+}
+
+.remote-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 20px;
+}
+
+/* 本地视频容器 - 改进定位 */
+.local-video-container {
+    position: absolute;
+    top: 35px;
+    right: 30px;
+    width: 200px;
+    height: 150px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    z-index: 10;
+    cursor: move; /* 显示可拖动光标 */
+    transition: all 0.3s ease;
+    resize: both; /* 允许调整大小 */
+    min-width: 120px;
+    min-height: 90px;
+    max-width: 300px;
+    max-height: 225px;
+}
+
+.local-video-container:hover {
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.5);
+}
+
+.local-video-container.dragging {
+    opacity: 0.8;
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.local-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.video-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 8px;
+    background: linear-gradient(180deg, rgba(0,0,0,0.6) 0%, transparent 100%);
+    color: white;
+    font-size: 0.7rem;
+    z-index: 2;
+    pointer-events: none;
+}
+
+/* 视频占位符 */
+.video-placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1;
+}
+
+.video-placeholder.small {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.placeholder-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.placeholder-avatar.small {
+    width: 50px;
+    height: 50px;
+    font-size: 1.2rem;
+    margin-bottom: 8px;
+}
+
+.placeholder-name {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.placeholder-status {
+    font-size: 1rem;
+    opacity: 0.8;
+}
+
+/* 操作按钮区域 */
+.incoming-call-actions,
+.outgoing-call-actions {
+    position: absolute;
+    bottom: 120px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    z-index: 20;
+    padding: 0 20px; /* 添加内边距 */
+    box-sizing: border-box;
+}
+
+.action-btn {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+.accept-btn {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+}
+
+.accept-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 12px 25px rgba(16, 185, 129, 0.4);
+}
+
+.reject-btn {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+}
+
+.reject-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 12px 25px rgba(239, 68, 68, 0.4);
+}
+
+.hangup-action-btn {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    width: 80px;
+    height: 80px;
+    font-size: 1.8rem;
+}
+
+.hangup-action-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 12px 25px rgba(239, 68, 68, 0.4);
+}
+
+/* 控制按钮 - 改进定位 */
+.controls {
+    position: absolute;
+    bottom: 30px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    z-index: 20;
+    padding: 0 20px; /* 添加内边距 */
+    box-sizing: border-box;
+}
+
+.control-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.control-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+.control-btn.active {
+    background: rgba(239, 68, 68, 0.3);
+    border-color: rgba(239, 68, 68, 0.5);
+}
+
+.hangup-btn {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    border: none;
+}
+
+.hangup-btn:hover {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    transform: scale(1.1);
+}
+
+/* 设备选择器 */
+.device-selector {
+    position: absolute;
+    bottom: 100px;
+    right: 40px; /* 调整位置 */
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 20px;
+    width: 280px;
+    z-index: 30;
+    transform: translateY(20px);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.device-selector.active {
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
+}
+
+.device-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    color: white;
+    font-weight: 600;
+}
+
+.close-devices {
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+}
+
+.close-devices:hover {
+    opacity: 1;
+}
+
+.device-group {
+    margin-bottom: 15px;
+}
+
+.device-group label {
+    display: block;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.9rem;
+    margin-bottom: 5px;
+}
+
+.device-select {
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    font-size: 0.9rem;
+}
+
+.device-select option {
+    background: #2a5298;
+    color: white;
+}
+
+/* 工具提示 */
+.tooltip {
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    pointer-events: none;
+}
+
+.control-btn:hover .tooltip {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* 通话计时器样式改进 */
+.call-timer {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    margin-top: 5px;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 1px;
+}
+
+/* 本地视频调整大小手柄 */
+.local-video-container::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 12px;
+    height: 12px;
+    background: linear-gradient(135deg, transparent 50%, rgba(255, 255, 255, 0.5) 50%);
+    cursor: nwse-resize;
+    border-bottom-right-radius: 10px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .video-call-container {
+        padding: 0 15px;
+    }
+
+    .local-video-container {
+        width: 150px;
+        height: 112px;
+        top: 20px;
+        right: 20px;
+    }
+
+    .remote-video-container {
+        width: calc(100% - 30px);
+    }
+
+    .action-btn {
+        width: 60px;
+        height: 60px;
+        font-size: 1.3rem;
+    }
+
+    .hangup-action-btn {
+        width: 70px;
+        height: 70px;
+        font-size: 1.5rem;
+    }
+
+    .control-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 1.1rem;
+    }
+
+    .device-selector {
+        width: 250px;
+        right: 20px;
+    }
+
+    .incoming-call-actions,
+    .outgoing-call-actions,
+    .controls {
+        padding: 0 15px;
+    }
+}
+
+/* 隐藏类 */
+.hidden {
+    display: none !important;
+}
+
+/* 加载动画 */
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top: 4px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 15px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

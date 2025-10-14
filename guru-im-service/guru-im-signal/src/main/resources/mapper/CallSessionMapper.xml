@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.guru.im.signal.mapper.CallSessionMapper">
+    <resultMap id="BaseResultMap" type="com.guru.im.signal.model.pojo.CallSession">
+        <id column="id" property="id" />
+        <result column="session_type" property="sessionType" />
+        <result column="media_type" property="mediaType" />
+        <result column="initiator_id" property="initiatorId" />
+        <result column="initiator_device" property="initiatorDevice" />
+        <result column="group_id" property="groupId" />
+        <result column="conference_id" property="conferenceId" />
+        <result column="conference_title" property="conferenceTitle" />
+        <result column="call_subject" property="callSubject" />
+        <result column="call_state" property="callState" />
+        <result column="max_participants" property="maxParticipants" />
+        <result column="timeout_seconds" property="timeoutSeconds" />
+        <result column="start_time" property="startTime" />
+        <result column="end_time" property="endTime" />
+        <result column="duration" property="duration" />
+        <result column="hangup_reason" property="hangupReason" />
+        <result column="hangup_type" property="hangupType" />
+        <result column="hangup_initiator" property="hangupInitiator" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+    </resultMap>
+
+    <insert id="insert" parameterType="com.guru.im.signal.model.pojo.CallSession">
+        INSERT INTO im_call_session(
+            id, session_type, media_type, initiator_id, initiator_device,
+            group_id, conference_id, conference_title, call_subject, call_state,
+            max_participants, timeout_seconds, start_time, end_time, duration,
+            hangup_reason, hangup_type, hangup_initiator, create_time, update_time
+        ) VALUES(
+                    #{id}, #{sessionType}, #{mediaType}, #{initiatorId}, #{initiatorDevice},
+                    #{groupId}, #{conferenceId}, #{conferenceTitle}, #{callSubject}, #{callState},
+                    #{maxParticipants}, #{timeoutSeconds}, #{startTime}, #{endTime}, #{duration},
+                    #{hangupReason}, #{hangupType}, #{hangupInitiator}, #{createTime}, #{updateTime}
+                )
+    </insert>
+
+
+    <update id="update" parameterType="com.guru.im.signal.model.pojo.CallSession">
+        UPDATE im_call_session
+        SET session_type = #{sessionType},
+            media_type = #{mediaType},
+            initiator_id = #{initiatorId},
+            initiator_device = #{initiatorDevice},
+            group_id = #{groupId},
+            conference_id = #{conferenceId},
+            conference_title = #{conferenceTitle},
+            call_subject = #{callSubject},
+            call_state = #{callState},
+            max_participants = #{maxParticipants},
+            timeout_seconds = #{timeoutSeconds},
+            start_time = #{startTime},
+            end_time = #{endTime},
+            duration = #{duration},
+            hangup_reason = #{hangupReason},
+            hangup_type = #{hangupType},
+            hangup_initiator = #{hangupInitiator},
+            update_time = #{updateTime}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 根据会话ID查询 -->
+    <select id="selectBySessionId" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT * FROM im_call_session WHERE id = #{sessionId}
+    </select>
+
+    <!-- 更新通话状态 -->
+    <update id="updateCallState">
+        UPDATE im_call_session
+        SET call_state = #{callState}, update_time = #{updateTime}
+        WHERE id = #{sessionId}
+    </update>
+
+    <!-- 查询用户正在进行的通话 -->
+    <select id="selectUserActiveSessions" resultMap="BaseResultMap">
+        SELECT s.* FROM im_call_session s
+                            INNER JOIN im_call_participant p ON s.id = p.session_id
+        WHERE p.user_id = #{userId}
+          AND p.participant_state IN (1, 2, 3, 4) -- 邀请中、振铃、已加入、重连中
+          AND s.call_state IN (1, 2, 3, 4) -- 拨号、振铃、连接、通话中
+    </select>
+
+    <!-- 查询会话参与者 -->
+    <select id="selectSessionParticipants" resultType="com.guru.im.signal.model.pojo.CallParticipant">
+        SELECT * FROM im_call_participant
+        WHERE session_id = #{sessionId}
+        ORDER BY create_time ASC
+    </select>
+
+    <!-- 更新参与者状态 -->
+    <update id="updateParticipantState">
+        UPDATE im_call_participant
+        SET participant_state = #{state}, update_time = #{updateTime}
+        <if test="joinTime != null">, join_time = #{joinTime}</if>
+        <if test="leaveTime != null">, leave_time = #{leaveTime}</if>
+        WHERE session_id = #{sessionId} AND user_id = #{userId} AND device_id = #{deviceId}
+    </update>
+
+    <update id="updateSessionEndInfo">
+        UPDATE im_call_session
+        SET call_state = 6,
+            end_time = #{endTime},
+            duration = #{duration},
+            hangup_reason = #{hangupReason},
+            hangup_type = #{hangupType},
+            hangup_initiator = #{hangupInitiator},
+            update_time = #{updateTime}
+        WHERE id = #{sessionId}
+    </update>
+
+    <update id="updateStartTime">
+        UPDATE im_call_session
+        SET start_time = #{startTime}, update_time = #{updateTime}
+        WHERE id = #{sessionId}
+    </update>
+
+    <select id="selectActiveSessions" resultMap="BaseResultMap">
+        SELECT * FROM im_call_session
+        WHERE call_state = 4 AND start_time IS NOT NULL
+    </select>
+
+    <select id="selectDialingSessions" resultMap="BaseResultMap">
+        SELECT * FROM im_call_session
+        WHERE call_state IN (1, 2) -- 拨号中、振铃中
+    </select>
+
+</mapper>

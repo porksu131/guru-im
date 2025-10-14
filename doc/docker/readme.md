@@ -10,6 +10,7 @@
 
 3. 执行部署
 ```bash
+  # 执行部署前，先提前docker pull下载好镜像
   sudo ./startup.sh
 ```
 

@@ -7,7 +7,8 @@ public enum CorrelationType {
     FRIEND_REQUEST_NOTIFY(4, "好友申请通知"),
     GROUP_INVITE_NOTIFY(5, "群邀请通知"),
     BATCH_OFFLINE_SYNC(6, "批量离线消息同步"),
-    BATCH_EVENTS_SYNC(7, "批量离线事件同步");
+    BATCH_EVENTS_SYNC(7, "批量离线事件同步"),
+    SIGNAL_MESSAGE(8, "信令消息");
 
 
     private final int code;

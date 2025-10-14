@@ -1,8 +1,9 @@
 # guru-im
 ## 项目介绍
-作为一个即时通讯系统，系统采用了分布式架构设计，引入了 Netty 框架，以实现高性能、实时的消息传递，目标流量设计可达到百万连接并发。
+作为一个即时通讯系统，系统采用了分布式架构设计，引入了 Netty 框架，以实现高性能、实时的消息传递，通过异步架构实现目标流量可达到百万连接并发。
 
-注：本项目只是个人学习练手，仅作分享和交流，多实战练习还是能够得到很多提升的。
+注：本项目只是个人学习实践，仅作记录、分享和交流。
+总结：多实战练习还是能够得到很多提升的。
 
 ## 项目功能
 - [x] 客户端sdk
@@ -14,9 +15,11 @@
 - [x] 已读消息
 - [x] 群聊功能
 - [x] 图片视频
-- [ ] 音频通话
-- [ ] 视频通话
-- [ ] 在线会议
+- [X] 音频通话
+- [X] 视频通话
+- [X] 桌面共享
+- [ ] 多人会议(待增加)
+- [ ] js sdk + electron + vue3(待完成)
 
 ## 效果展示
 **流水线部署**
@@ -40,6 +43,15 @@
 **群聊**
 ![群聊.png](asset/guru-im-demo-group-chat.gif)
 
+**语音通话**
+![语音通话.png](asset/guru-im-demo-audio-chat.gif)
+
+**视频通话**
+![视频通话.png](asset/guru-im-demo-video-chat.gif)
+
+**桌面共享**
+![桌面共享.png](asset/guru-im-demo-screen-share.gif)
+
 ## IM架构设计
 ![IM_架构设计.png](asset/guru-im-design.png)
 
@@ -48,7 +60,7 @@
 
 ## 各个分层主要技术栈
 - 应用层：
-    - 桌面应用程序：java swing
+    - 桌面应用程序：java swing、netty、sqlite、javacv、ffmpeg、jcef、mediasoup
 - 网关层：
     - tcp网关：spring boot、netty、nacos、redis、loadbalancer、httpclient、jwt
     - http网关：spring cloud gateway、loadbalancer、nacos、jwt
@@ -59,11 +71,11 @@
     - 用户：spring boot web、nacos、mysql、redis
     - 认证：spring boot web、security、nacos、mysql、redis
     - 文件：spring boot web、nacos、mysql、minio
+    - mediasoup: WebRTC 视频会议、语音通话和实时数据流应用的服务器端
 - 存储层：mysql、redis
-- 示例demo：java swing、netty、sqlite、javacv、ffmpeg
 
 - 部署：
-  - docker-compose快速环境搭建：mysql、nacos、redis、rocketmq、minio
+  - docker-compose快速环境搭建：mysql、nacos、redis、rocketmq、minio、coturn、mediasoup
   - k8s + jenkins + gitlab + harbor
 
 ## 项目模块解析
@@ -85,6 +97,7 @@
 |   |-- guru-im-demo
 |   |   |-- pom.xml
 |   |   `-- src
+|   |-- guru-im-mediasoup
 |   |-- guru-im-protocol
 |   |   |-- guru-im-protocol.iml
 |   |   |-- pom.xml
@@ -101,6 +114,7 @@
 |   |   |-- guru-im-group-chat
 |   |   |-- guru-im-job
 |   |   |-- guru-im-offline
+|   |   |-- guru-im-signal
 |   |   |-- guru-im-single-chat
 |   |   |-- guru-im-user
 |   |   `-- pom.xml
@@ -150,6 +164,8 @@
         - 功能：提供用户信息查询，修改、好友功能，主要负责消费来自dispatch的mq消息、好友在线状态推送到dispatch
     - guru-im-file
         - 功能：提供minio文件分片文件上传，分片文件合并，minio文件下载url功能
+    - guru-im-signal
+        - 功能：信令服务，为webrtc语音视频媒体交互提供信令服务，负责会议房间的管理，信令的转发，通过http与mediasoup交互
 #### guru-im-starter
 - 定义：抽取微服务的公共配置组件
 - 功能：目录，起到模块分组作用
@@ -161,14 +177,17 @@
         - 功能：封装消息队列的spring-boot自动配置
     - guru-im-nacos-spring-boot-starter
         - 功能：封装nacos的注册中心和配置中心的spring-boot自动配置
+    - guru-im-remote-spring-boot-starter
+      - 功能：封装负载均衡的spring restTemplate功能，提供微服务间的远程调用能力。
     - guru-im-security-spring-boot-starter
         - 功能：封装jwt生成和校验的spring-boot自动配置
 
 ### 亮点
-- 双向通信：gateway网关既有netty客户端，也有netty服务端，其中服务端与用户连接，客户端与dispatch连接
-- 引入消息队列：使服务之间解耦，服务负责的功能更为单一，逻辑更为清晰，能有效提升系统的并发处理能力，减轻数据库的压力
-- 无状态服务：netty服务器可水平扩展服务节点，应对更高的流量
-- k8s部署：通过配置转发tcp协议的流量来实现客户端与服务端的tcp连接
+- 双向通信：gateway网关既有netty客户端，也有netty服务端，其中服务端与用户连接，客户端与dispatch连接。
+- 引入消息队列：使服务之间解耦，服务负责的功能更为单一，逻辑更为清晰，能有效提升系统的并发处理能力，减轻数据库的压力。
+- 无状态服务：netty服务器可水平扩展服务节点，应对更高的流量。
+- k8s部署：通过配置转发tcp协议的流量来实现客户端与服务端的tcp连接。
+- 加入了语音视频会议的IM交互功能。
 - 具备完整的示例：通过示例实现各个基本的业务功能，以验证基础架构健壮性。
 - 知识覆盖面广且实用：从前端到后端提供完整的调用链路，供学习、笔记、借鉴都不错。
 
@@ -247,6 +266,7 @@
 - 加深对spring cloud框架使用和理解，对抽取公共starter的开发和应用
 - 加深对nacos，rocket mq、redis中间件的原理理解和操作熟练度
 - 加深对juc包，线程池的异步编程使用和理解
+- 熟悉了多媒体流的应用层级使用和理解
 - 加深对桌面应用程序的开发熟练程度
 - 加深对于BS架构的理解，能够站在不同角度分析和处理问题，特别的是网络波动或异常这一块的处理
 - 有想法是一回事，真正落地实现和调试问题的过程才最为紧要，最后带来的是满满的成就

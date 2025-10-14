@@ -15,11 +15,15 @@ import com.guru.im.demo.gui.menu.PopupMenuItemInfo;
 import com.guru.im.demo.gui.menu.PopupMenuUtil;
 import com.guru.im.demo.listener.*;
 import com.guru.im.demo.model.*;
+import com.guru.im.demo.model.DeviceInfo;
 import com.guru.im.demo.model.Message;
 import com.guru.im.demo.model.UserInfo;
 import com.guru.im.demo.service.ApiService;
 import com.guru.im.demo.service.TokenManager;
 import com.guru.im.demo.service.UserService;
+import com.guru.im.demo.signal.bridge.UserSpecificJCEFManager;
+import com.guru.im.demo.signal.manager.MediaWindowManager;
+import com.guru.im.demo.signal.manager.SignalingManager;
 import com.guru.im.demo.sqlite.DatabaseManager;
 import com.guru.im.protocol.model.*;
 import com.guru.im.sdk.IMClientManager;
@@ -45,11 +49,14 @@ public class MainFrame extends JFrame {
     private final DatabaseManager databaseManager;
     private final IMClientManager imClientManager;
     private final TokenManager tokenManager;
-    private boolean isLogout = false;
+    private final SignalingManager signalingManager;
+    private final MediaWindowManager mediaWindowManager;
 
     private PopupMenuUtil popupMenuUtil;
     private ContentPanel contentPanel;
     private HeaderPanel headerPanel;
+
+    private boolean isLogout = false;
 
     public MainFrame(UserInfo user) throws Exception {
         this.currentUser = user;
@@ -59,6 +66,12 @@ public class MainFrame extends JFrame {
         this.databaseManager = new DatabaseManager(currentUser);
         this.deviceInfo = initDeviceInfo();
         this.imClientManager = initIMClientManager();
+        this.signalingManager = new SignalingManager(this);
+        this.mediaWindowManager = new MediaWindowManager(this.signalingManager, this);
+        // 应用程序关闭时
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            UserSpecificJCEFManager.getInstance(currentUser.getUid()).shutdown();
+        }));
         initPopupMenuUtil();
         setupUI();
         start();
@@ -85,7 +98,7 @@ public class MainFrame extends JFrame {
         imUserInfo.setAccessToken(this.currentUser.getAccessToken());
         imUserInfo.setRefreshToken(this.currentUser.getRefreshToken());
 
-        IMClientManager imClientManager = new IMClientManager(imConfig, imUserInfo, deviceInfo);
+        IMClientManager imClientManager = new IMClientManager(imConfig, imUserInfo, toDeviceInfo(deviceInfo));
         imClientManager.addEventListener(new SyncMessageListener(this));
         imClientManager.addEventListener(new ChatMessageListener(this));
         imClientManager.addEventListener(new PresenceNotifyListener(this));
@@ -95,15 +108,20 @@ public class MainFrame extends JFrame {
         imClientManager.addEventListener(new OfflineEventListener(this));
         imClientManager.addEventListener(new GroupInviteNotifyListener(this));
         imClientManager.addEventListener(new OfflineDeviceListener(this));
+        imClientManager.addEventListener(new SignalMessageListener(this));
         return imClientManager;
     }
 
     private DeviceInfo initDeviceInfo() {
-        return DeviceInfo.newBuilder()
-                .setDeviceId("window10")
-                .setDeviceName("window10")
-                .setClientVersion(getClientVersion())
-                .setPlatform(DeviceInfo.PlatformType.WINDOWS)
+        return new DeviceInfo("window10", "window10", getClientVersion(), 3);
+    }
+
+    private com.guru.im.protocol.model.DeviceInfo toDeviceInfo(DeviceInfo deviceInfo) {
+        return com.guru.im.protocol.model.DeviceInfo.newBuilder()
+                .setDeviceId(deviceInfo.getDeviceId())
+                .setDeviceName(deviceInfo.getDeviceName())
+                .setClientVersion(deviceInfo.getClientVersion())
+                .setPlatform(com.guru.im.protocol.model.DeviceInfo.PlatformType.forNumber(deviceInfo.getPlatform()))
                 .build();
     }
 
@@ -228,8 +246,11 @@ public class MainFrame extends JFrame {
             this.imClientManager.disconnect();
         });
         new LoginFrame().setVisible(true);
+        this.getMediaWindowManager().shutdown();
         super.dispose();
     }
+
+
 
 
     // 收到用户在线状态变更消息
@@ -365,6 +386,11 @@ public class MainFrame extends JFrame {
         }
     }
 
+    // 收到信令消息
+    public void onReceiveSignalingMessage(SignalingMessage signalingMessage) {
+        this.getSignalingManager().handleNettySignaling(signalingMessage);
+    }
+
     public void saveLastSyncSeq(Long syncSeq) {
         this.getDatabaseManager().updateLastSyncSeq(this.currentUser.getUid(), syncSeq);
     }
@@ -421,6 +447,14 @@ public class MainFrame extends JFrame {
 
     public boolean isLogout() {
         return isLogout;
+    }
+
+    public MediaWindowManager getMediaWindowManager() {
+        return mediaWindowManager;
+    }
+
+    public SignalingManager getSignalingManager() {
+        return signalingManager;
     }
 }
 

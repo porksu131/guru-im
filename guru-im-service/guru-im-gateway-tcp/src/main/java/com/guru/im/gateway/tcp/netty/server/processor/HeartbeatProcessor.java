@@ -4,6 +4,7 @@ import com.guru.im.cache.starter.UserSessionManager;
 import com.guru.im.common.constant.OnlineStatus;
 import com.guru.im.core.common.constant.ResponseCode;
 import com.guru.im.gateway.tcp.IMGatewayNettyClient;
+import com.guru.im.gateway.tcp.IMGatewayNettyServer;
 import com.guru.im.gateway.tcp.netty.server.ChannelAttributeUtils;
 import com.guru.im.protocol.model.DeviceInfo;
 import com.guru.im.protocol.model.ImMessage;
@@ -24,7 +25,7 @@ public class HeartbeatProcessor{
     @Autowired
     private UserSessionManager userSessionManager;
     @Autowired
-    private IMGatewayNettyClient nettyClient;
+    private IMGatewayNettyServer nettyServer;
 
     public ImMessage processRequest(ChannelHandlerContext ctx, ImMessage request) {
         serverMessageProcessorExecutor.submit(() -> {
@@ -35,7 +36,7 @@ public class HeartbeatProcessor{
                 // 更新用户活跃时间
                 userSessionManager.updateDeviceStatus(userId,
                         deviceInfo.getDeviceId(),
-                        nettyClient.getRemoteClientManager().getLocalAddress(),
+                        nettyServer.getLocalServerAddress(),
                         deviceInfo.getClientVersion(),
                         deviceInfo.getPlatform().toString(),
                         OnlineStatus.ONLINE);
@@ -44,6 +45,7 @@ public class HeartbeatProcessor{
             }
 
         });
-        return MessageBuilder.createHeartBeatAck(request, ResponseCode.SUCCESS, "heartbeat received successfully");
+        // 返回一个心跳信息
+        return MessageBuilder.createHeartbeat();
     }
 }

@@ -371,3 +371,78 @@ CREATE TABLE `im_offline_events_delivery` (
                                           KEY `uk_user_device_status` (`user_id`, `device_id`, `delivery_status`),
                                           KEY `idx_user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='离线事件投递表';
+
+
+
+-- 通话会话表
+DROP TABLE IF EXISTS `im_call_session`;
+CREATE TABLE `im_call_session` (
+                                   `id` bigint NOT NULL COMMENT '会话ID(雪花ID)',
+                                   `session_type` tinyint NOT NULL COMMENT '会话类型(1:私聊通话 2:群组通话 3:会议)',
+                                   `media_type` tinyint NOT NULL COMMENT '媒体类型(0:仅音频 1:视频 2:屏幕共享 3:群组视频)',
+                                   `initiator_id` bigint NOT NULL COMMENT '发起者用户ID',
+                                   `initiator_device` varchar(100) NOT NULL COMMENT '发起者设备ID',
+                                   `group_id` bigint DEFAULT NULL COMMENT '群组ID(群通话时)',
+                                   `conference_id` bigint DEFAULT NULL COMMENT '会议ID(会议时)',
+                                   `conference_title` varchar(200) DEFAULT NULL COMMENT '会议标题',
+                                   `call_subject` varchar(200) DEFAULT NULL COMMENT '通话主题',
+                                   `call_state` tinyint NOT NULL COMMENT '通话状态(0:空闲 1:拨号中 2:振铃中 3:连接中 4:通话中 5:挂断中 6:已结束)',
+                                   `max_participants` int DEFAULT 10 COMMENT '最大参与者数',
+                                   `timeout_seconds` int DEFAULT 30 COMMENT '呼叫超时时间(秒)',
+                                   `start_time` bigint DEFAULT NULL COMMENT '通话开始时间',
+                                   `end_time` bigint DEFAULT NULL COMMENT '通话结束时间',
+                                   `duration` int DEFAULT 0 COMMENT '通话时长(秒)',
+                                   `hangup_reason` varchar(100) DEFAULT NULL COMMENT '挂断原因',
+                                   `hangup_type` tinyint DEFAULT NULL COMMENT '挂断类型',
+                                   `hangup_initiator` bigint DEFAULT NULL COMMENT '挂断发起者',
+                                   `create_time` bigint NOT NULL COMMENT '创建时间',
+                                   `update_time` bigint NOT NULL COMMENT '更新时间',
+                                   PRIMARY KEY (`id`),
+                                   KEY `idx_initiator` (`initiator_id`),
+                                   KEY `idx_group_id` (`group_id`),
+                                   KEY `idx_state_time` (`call_state`, `create_time`),
+                                   KEY `idx_create_time` (`create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='通话会话表';
+
+-- 通话参与者表
+DROP TABLE IF EXISTS `im_call_participant`;
+CREATE TABLE `im_call_participant` (
+                                       `id` bigint NOT NULL COMMENT '记录ID(雪花ID)',
+                                       `session_id` bigint NOT NULL COMMENT '会话ID',
+                                       `user_id` bigint NOT NULL COMMENT '用户ID',
+                                       `device_id` varchar(100) NOT NULL COMMENT '设备ID',
+                                       `participant_state` tinyint NOT NULL COMMENT '参与者状态(0:已邀请 1:振铃中 2:已加入 3:已拒绝 4:已离开 5:超时 6:被踢出 7:重连中)',
+                                       `is_inviter` tinyint DEFAULT 0 COMMENT '是否是邀请者',
+                                       `join_time` bigint DEFAULT NULL COMMENT '加入时间',
+                                       `leave_time` bigint DEFAULT NULL COMMENT '离开时间',
+                                       `duration` int DEFAULT 0 COMMENT '参与时长(秒)',
+                                       `media_state` varchar(500) DEFAULT NULL COMMENT '媒体状态(JSON格式)',
+                                       `selected_device` varchar(100) DEFAULT NULL COMMENT '服务器选择的设备ID',
+                                       `create_time` bigint NOT NULL COMMENT '创建时间',
+                                       `update_time` bigint NOT NULL COMMENT '更新时间',
+                                       PRIMARY KEY (`id`),
+                                       UNIQUE KEY `uniq_session_user_device` (`session_id`, `user_id`, `device_id`),
+                                       KEY `idx_session_id` (`session_id`),
+                                       KEY `idx_user_id` (`user_id`),
+                                       KEY `idx_state_time` (`participant_state`, `create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='通话参与者表';
+
+-- 媒体房间映射表
+DROP TABLE IF EXISTS `im_media_room`;
+CREATE TABLE `im_media_room` (
+                                 `id` bigint NOT NULL COMMENT '记录ID(雪花ID)',
+                                 `session_id` bigint NOT NULL COMMENT '通话会话ID',
+                                 `room_id` varchar(100) NOT NULL COMMENT 'mediasoup房间ID',
+                                 `worker_pid` int DEFAULT NULL COMMENT 'mediasoup worker进程ID',
+                                 `router_id` varchar(100) DEFAULT NULL COMMENT 'mediasoup router ID',
+                                 `active_peers` int DEFAULT 0 COMMENT '活跃对等端数量',
+                                 `room_status` tinyint DEFAULT 1 COMMENT '房间状态(0:关闭 1:活跃)',
+                                 `create_time` bigint NOT NULL COMMENT '创建时间',
+                                 `update_time` bigint NOT NULL COMMENT '更新时间',
+                                 PRIMARY KEY (`id`),
+                                 UNIQUE KEY `uniq_session_id` (`session_id`),
+                                 UNIQUE KEY `uniq_room_id` (`room_id`),
+                                 KEY `idx_status_time` (`room_status`, `create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='媒体房间映射表';
+
+

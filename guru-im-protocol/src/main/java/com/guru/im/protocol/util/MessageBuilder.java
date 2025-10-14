@@ -76,20 +76,6 @@ public class MessageBuilder {
                 .build();
     }
 
-    public static ImMessage createHeartBeatAck(ImMessage request, int code, String msg) {
-        Response response = Response.newBuilder()
-                .setCode(code)
-                .setMsg(msg)
-                .build();
-        return ImMessage.newBuilder()
-                .setMsgId(request.getMsgId())
-                .setVersion(request.getVersion())
-                .setMsgType(ImMessage.MsgType.ONEWAY)
-                .setMessageType(request.getMessageType())
-                .setResponse(response)
-                .build();
-    }
-
     public static ImMessage createIMChatMessage(ChatMessage chatMessage) {
         return ImMessage.newBuilder()
                 .setMsgId(sequenceIdUtil.next())

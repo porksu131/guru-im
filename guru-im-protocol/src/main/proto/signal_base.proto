@@ -1,0 +1,114 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.guru.im.protocol.model";
+
+import "base.proto";
+import "signal_content.proto";
+
+// 基础信令消息
+message SignalingMessage {
+  int64 message_id = 1;           // 消息唯一ID
+  int64 session_id = 2;          // 通话会话ID
+  int64 from_user = 3;            // 发起用户ID
+  string from_device = 4;         // 发起设备ID
+  repeated int64 to_users = 5;    // 目标用户列表
+  repeated DeviceTarget to_devices = 6; // 目标设备列表
+  SignalingType type = 7;         // 信令类型
+  int64 timestamp = 8;            // 消息时间戳
+  int32 version = 9;              // 协议版本
+
+  oneof payload {
+
+    // === 通话控制消息 ===
+    CallRequest call_request = 10;                    // [客户端→服务器]发起呼叫 | [服务器→客户端]转发呼叫
+    CallRequestResponse call_request_response = 32;   // [服务器→客户端]呼叫请求响应
+    CallResponse call_response = 11;                  // [客户端→服务器]呼叫响应 | [服务器→客户端]转发响应
+    CallHangup hangup = 19;                          // [客户端→服务器]挂断通话 | [服务器→客户端]转发挂断
+    CallStateSync state_sync = 20;                    // [服务器→客户端]状态同步
+    Ringing ringing = 21;                            // [客户端→服务器]开始振铃 | [服务器→客户端]选定设备振铃
+
+    // === 媒体传输相关 ===
+    CallRequest init_session = 34;                    // [客户端→服务器]会议初始化，发起方创建并加入房间
+    MediasoupTransportCreate transport_create = 12;  // [客户端→服务器]请求创建传输 | [服务器→客户端]返回传输选项
+    MediasoupTransportConnect transport_connect = 13;// [客户端→服务器]连接传输
+    MediasoupTransportConnectResponse transport_connect_response = 35; // [服务器→客户端]传输连接结果
+    MediasoupProduce produce = 14;                   // [客户端→服务器]创建生产者
+    MediasoupProduceResponse produce_response = 15;  // [服务器→客户端]生产者创建结果
+    MediasoupConsume consume = 16;                   // [客户端→服务器]创建消费者
+    MediasoupConsumeResponse consume_response = 17;  // [服务器→客户端]消费者创建结果
+    MediasoupConsumerResume consumer_resume = 18;    // [客户端→服务器]恢复消费者
+
+    // === 房间信息相关 ===
+    RtpCapabilitiesRequest rtp_capabilities_request = 28;    // [客户端→服务器]请求RTP能力
+    RtpCapabilitiesResponse rtp_capabilities_response = 29;  // [服务器→客户端]返回RTP能力
+    RoomProducersRequest room_producers_request = 30;        // [客户端→服务器]请求生产者列表
+    RoomProducersResponse room_producers_response = 31;      // [服务器→客户端]返回生产者列表
+
+    // === 会议相关 ===
+    ConferenceInvite conference_invite = 22;         // [客户端→服务器]发起邀请 | [服务器→客户端]转发邀请
+    ConferenceInviteResponse conference_invite_response = 33; // [服务器→客户端]会议邀请响应
+    ConferenceJoin conference_join = 23;             // [客户端→服务器]加入会议 | [服务器→客户端]转发加入
+    ConferenceLeave conference_leave = 24;           // [客户端→服务器]离开会议 | [服务器→客户端]转发离开
+    ConferenceKick conference_kick = 25;             // [服务器→客户端]踢出会议
+    ConferenceUpdate conference_update = 26;         // [服务器→客户端]会议更新
+
+    // === 媒体控制 ===
+    MediaControl media_control = 27;                 // [客户端→服务器]控制媒体 | [服务器→客户端]转发控制
+  }
+}
+
+// 设备目标
+message DeviceTarget {
+  int64 user_id = 1;
+  string device_id = 2;
+}
+
+// 信令类型枚举
+enum SignalingType {
+  UNKNOWN = 0;
+
+  INIT_SESSION = 45;       // [客户端→服务器]会议初始化
+  JOIN_ROOM = 46;          // [客户端→服务器]会加入房间
+
+  // === 通话控制 ===
+  CALL_REQUEST = 1;        // [客户端→服务器]发起呼叫 | [服务器→客户端]转发呼叫
+  CALL_ACCEPT = 2;         // [客户端→服务器]接听呼叫 | [服务器→客户端]转发接听
+  CALL_REJECT = 3;         // [客户端→服务器]拒绝呼叫 | [服务器→客户端]转发拒绝
+  CALL_TIMEOUT = 4;        // [服务器→客户端]呼叫超时
+  CALL_CANCEL = 5;         // [客户端→服务器]取消呼叫
+  CALL_HANGUP = 30;        // [客户端→服务器]挂断通话 | [服务器→客户端]转发挂断
+  RINGING = 31;            // [客户端→服务器]开始振铃 | [服务器→客户端]选定设备振铃
+  STATE_SYNC = 32;         // [服务器→客户端]状态同步
+  CALL_REQUEST_RESPONSE = 43; // [服务器→客户端]呼叫请求响应
+
+  // === 媒体传输相关 ===
+  MEDIASOUP_TRANSPORT_CREATE = 10;    // [客户端→服务器]请求创建传输 | [服务器→客户端]返回传输选项
+  MEDIASOUP_TRANSPORT_CONNECT = 11;   // [客户端→服务器]连接传输
+  MEDIASOUP_TRANSPORT_CONNECT_RESPONSE = 42; // [服务器→客户端]传输连接结果
+  MEDIASOUP_PRODUCE = 12;             // [客户端→服务器]创建生产者
+  MEDIASOUP_PRODUCE_RESPONSE = 13;    // [服务器→客户端]生产者创建结果
+  MEDIASOUP_CONSUME = 14;             // [客户端→服务器]创建消费者
+  MEDIASOUP_CONSUME_RESPONSE = 15;    // [服务器→客户端]消费者创建结果
+  MEDIASOUP_CONSUMER_RESUME = 16;     // [客户端→服务器]恢复消费者
+
+  // === 房间信息相关 ===
+  RTP_CAPABILITIES_REQUEST = 17;      // [客户端→服务器]请求RTP能力
+  RTP_CAPABILITIES_RESPONSE = 18;     // [服务器→客户端]返回RTP能力
+  ROOM_PRODUCERS_REQUEST = 19;        // [客户端→服务器]请求生产者列表
+  ROOM_PRODUCERS_RESPONSE = 20;       // [服务器→客户端]返回生产者列表
+
+  // === 会议相关 ===
+  CONFERENCE_INVITE = 33;  // [客户端→服务器]发起邀请 | [服务器→客户端]转发邀请
+  CONFERENCE_JOIN = 34;    // [客户端→服务器]加入会议 | [服务器→客户端]转发加入
+  CONFERENCE_LEAVE = 35;   // [客户端→服务器]离开会议 | [服务器→客户端]转发离开
+  CONFERENCE_KICK = 36;    // [服务器→客户端]踢出会议
+  CONFERENCE_UPDATE = 37;  // [服务器→客户端]会议更新
+  CONFERENCE_REJOIN = 38;  // [客户端→服务器]重新加入
+  CONFERENCE_REJECT = 39;  // [客户端→服务器]拒绝加入
+  CONFERENCE_ENDED = 40;   // [服务器→客户端]结束会议
+  CONFERENCE_INVITE_RESPONSE = 44; // [服务器→客户端]会议邀请响应
+
+  // === 媒体控制 ===
+  MEDIA_CONTROL = 41;      // [客户端→服务器]控制媒体 | [服务器→客户端]转发控制
+}

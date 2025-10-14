@@ -73,7 +73,7 @@ public class AuthProcessor {
         ChannelAttributeUtils.setDeviceInfo(ctx.channel(), deviceInfo);
 
         String userAddr = ChannelUtil.parseChannelRemoteAddr(ctx.channel());
-        String gatewayAddr = ChannelUtil.getLocalHost() + ":" + gatewayNettyServer.getLocalServerPort();
+        String gatewayAddr = gatewayNettyServer.getLocalServerAddress();
 
         // 将旧设备下线（如果存在的话）
         sendOfflineDevice(userId, deviceInfo.getDeviceId());

@@ -3,11 +3,14 @@ package com.guru.im.sdk.event;
 import com.guru.im.core.common.constant.ResponseCode;
 import com.guru.im.protocol.model.ImMessage;
 import com.guru.im.protocol.util.MessageBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class IMEventDispatcher {
+    private static final Logger logger = LoggerFactory.getLogger(IMEventDispatcher.class);
     private final List<IMEventListener> listeners = new CopyOnWriteArrayList<>();
 
     private IMEvent convertToEvent(ImMessage imMessage) {
@@ -31,6 +34,8 @@ public class IMEventDispatcher {
                 return new IMEvent(IMEventType.READ_RECEIPT, imMessage, imMessage.getReadReceiptNotify());
             case OFFLINE_DEVICE_MESSAGE:
                 return new IMEvent(IMEventType.OFFLINE_DEVICE, imMessage, imMessage.getOfflineDeviceMessage());
+            case SIGNALING_MESSAGE:
+                return new IMEvent(IMEventType.SIGNALING_MESSAGE, imMessage, imMessage.getSignalingMessage());
         }
         throw new IllegalArgumentException("Unsupported im message type: " + imMessage.getBodyCase());
     }

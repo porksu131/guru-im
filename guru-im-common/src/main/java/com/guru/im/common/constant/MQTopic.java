@@ -9,6 +9,8 @@ public class MQTopic {
     public static final String OFFLINE_TOPIC = "offline-topic";
     // 发往 用户微服务 的 topic
     public static final String USR_TOPIC = "user-topic";
+    // 发往 信令微服务 的 topic
+    public static final String SIGNAL_TOPIC = "signal-topic";
 
     // 发往 分发系统 的 topic （message类）
     public static final String DISPATCH_CHAT_TOPIC = "dispatch-chat-topic";
@@ -18,6 +20,8 @@ public class MQTopic {
     public static final String DISPATCH_NOTIFY_TOPIC = "dispatch-notify-topic";
     // 发往 分发系统 的 topic （action类）
     public static final String DISPATCH_ACTION_TOPIC = "dispatch-action-topic";
+    // 发往 分发系统 的 topic （signal类）
+    public static final String DISPATCH_SIGNAL_TOPIC = "dispatch-signal-topic";
 
 
     // 死信队列 的 topic

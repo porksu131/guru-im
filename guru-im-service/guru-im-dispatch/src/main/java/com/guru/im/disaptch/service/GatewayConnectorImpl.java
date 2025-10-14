@@ -88,6 +88,8 @@ public class GatewayConnectorImpl implements GatewayConnector {
     private Channel findUserGatewayChannel(DeviceStatus deviceStatus) {
         if (deviceStatus != null && deviceStatus.getGatewayAddress() != null) {
             Channel channel = nettyServer.getChannelCacheManager().getActiveChannel(deviceStatus.getGatewayAddress());
+            LOGGER.info("findUserGatewayChannel: gatewayAddress={}, resultChannel isNull={}",
+                    deviceStatus.getGatewayAddress(), channel == null);
             if (channel != null && channel.isActive()) {
                 return channel;
             }

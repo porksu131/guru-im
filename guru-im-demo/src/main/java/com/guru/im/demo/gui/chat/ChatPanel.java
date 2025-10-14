@@ -14,10 +14,12 @@ import com.guru.im.demo.model.MediaInfo;
 import com.guru.im.demo.model.Message;
 import com.guru.im.demo.model.UserConversation;
 import com.guru.im.demo.model.UserInfo;
+import com.guru.im.demo.service.UserService;
 import com.guru.im.demo.sqlite.DatabaseManager;
 import com.guru.im.demo.util.ButtonUtil;
 import com.guru.im.demo.util.FileUtil;
 import com.guru.im.demo.util.ImageUtil;
+import com.guru.im.protocol.model.ConversationType;
 
 import javax.swing.*;
 import java.awt.*;
@@ -157,12 +159,15 @@ public class ChatPanel extends JPanel {
 
         JButton phoneButton = ButtonUtil.createSvgButton("image/phone.svg", "语音通话", 16, Color.LIGHT_GRAY);
         phoneButton.setRolloverIcon(ImageUtil.createSVGIcon("image/phone.svg", 16, Color.GRAY));
+        phoneButton.addActionListener(e -> startAudioCall());
 
         JButton videoButton = ButtonUtil.createSvgButton("image/video.svg", "视频通话", 16, Color.LIGHT_GRAY);
         videoButton.setRolloverIcon(ImageUtil.createSVGIcon("image/video.svg", 16, Color.GRAY));
+        videoButton.addActionListener(e -> startVideoCall());
 
         JButton screenButton = ButtonUtil.createSvgButton("image/screen.svg", "桌面共享", 16, Color.LIGHT_GRAY);
         screenButton.setRolloverIcon(ImageUtil.createSVGIcon("image/screen.svg", 16, Color.GRAY));
+        screenButton.addActionListener(e -> startConference());
 
         JButton menuButton = ButtonUtil.createSvgButton("image/menu-dots.svg", "更多", 16, Color.LIGHT_GRAY);
         menuButton.setRolloverIcon(ImageUtil.createSVGIcon("image/menu-dots.svg", 16, Color.GRAY));
@@ -187,6 +192,32 @@ public class ChatPanel extends JPanel {
 
         return headerPanel;
     }
+
+
+    private void startAudioCall() {
+        if (userConversation.getConversationType() == ConversationType.PRIVATE_VALUE) {
+            Long receiverId = UserConversation.extractReceiverId(currentUser.getUid(), userConversation);
+            String receiverName = UserService.getUserName(receiverId);
+            this.mainFrame.getMediaWindowManager().startAudioCall(receiverId, receiverName, this.mainFrame);
+        }
+    }
+
+    private void startVideoCall() {
+        if (userConversation.getConversationType() == ConversationType.PRIVATE_VALUE) {
+            Long receiverId = UserConversation.extractReceiverId(currentUser.getUid(), userConversation);
+            String receiverName = UserService.getUserName(receiverId);
+            this.mainFrame.getMediaWindowManager().startVideoCall(receiverId, receiverName, this.mainFrame);
+        }
+    }
+
+    private void startConference() {
+        if (userConversation.getConversationType() == ConversationType.PRIVATE_VALUE) {
+            Long receiverId = UserConversation.extractReceiverId(currentUser.getUid(), userConversation);
+            String receiverName = UserService.getUserName(receiverId);
+            this.mainFrame.getMediaWindowManager().startConference(receiverId, receiverName, this.mainFrame);
+        }
+    }
+
 
     private JPanel createInputPanel() {
         JPanel inputPanel = new JPanel(new BorderLayout(5, 5));

@@ -9,10 +9,7 @@ import com.guru.im.sdk.event.IMEventListener;
 import com.guru.im.sdk.listener.DefaultConnectionListener;
 import com.guru.im.sdk.listener.DefaultMessageListener;
 import com.guru.im.sdk.model.UserInfo;
-import com.guru.im.sdk.service.ChatService;
-import com.guru.im.sdk.service.GroupService;
-import com.guru.im.sdk.service.ServiceFactory;
-import com.guru.im.sdk.service.UserService;
+import com.guru.im.sdk.service.*;
 
 public class IMClientManager {
     private final IMClient client;
@@ -63,6 +60,10 @@ public class IMClientManager {
 
     public UserService user() {
         return serviceFactory.getUserService();
+    }
+
+    public SignalService signal() {
+        return serviceFactory.getSignalService();
     }
 
     public void addEventListener(IMEventListener listener) {

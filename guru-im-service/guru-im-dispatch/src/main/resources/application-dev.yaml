@@ -34,6 +34,7 @@ rocketmq:
     action-group: dispatch-action-consumer-group  # 消费者组名称，动作类
     control-group: dispatch-control-consumer-group  # 消费者组名称，控制类
     retry-group: dispatch-retry-consumer-group  # 消费者组名称，重试类
+    signal-group: dispatch-signal-consumer-group  # 消费者组名称，重试类
 
 
 ## netty配置

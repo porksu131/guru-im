@@ -7,6 +7,7 @@ import com.guru.im.demo.model.Message;
 import com.guru.im.demo.model.UserInfo;
 import com.guru.im.demo.util.FileUtil;
 import com.guru.im.protocol.model.*;
+import com.guru.im.protocol.model.DeviceInfo;
 
 import java.util.UUID;
 

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.guru.im.signal.mapper.MediaRoomMapper">
+
+    <resultMap id="BaseResultMap" type="com.guru.im.signal.model.pojo.MediaRoomMapping">
+        <id column="id" property="id" />
+        <result column="session_id" property="sessionId" />
+        <result column="room_id" property="roomId" />
+        <result column="worker_pid" property="workerPid" />
+        <result column="router_id" property="routerId" />
+        <result column="active_peers" property="activePeers" />
+        <result column="room_status" property="roomStatus" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+    </resultMap>
+
+    <insert id="insert" parameterType="com.guru.im.signal.model.pojo.MediaRoomMapping">
+        INSERT INTO im_media_room(
+            id, session_id, room_id, worker_pid, router_id,
+            active_peers, room_status, create_time, update_time
+        ) VALUES(
+                    #{id}, #{sessionId}, #{roomId}, #{workerPid}, #{routerId},
+                    #{activePeers}, #{roomStatus}, #{createTime}, #{updateTime}
+                )
+    </insert>
+
+    <select id="selectBySessionId" resultMap="BaseResultMap">
+        SELECT * FROM im_media_room WHERE session_id = #{sessionId}
+    </select>
+
+    <select id="selectByRoomId" resultMap="BaseResultMap">
+        SELECT * FROM im_media_room WHERE room_id = #{roomId}
+    </select>
+
+    <update id="updateRoomStatus">
+        UPDATE im_media_room
+        SET room_status = #{roomStatus}, update_time = #{updateTime}
+        WHERE room_id = #{roomId}
+    </update>
+
+    <update id="updateActivePeers">
+        UPDATE im_media_room
+        SET active_peers = #{activePeers}, update_time = #{updateTime}
+        WHERE room_id = #{roomId}
+    </update>
+
+    <delete id="deleteBySessionId">
+        DELETE FROM im_media_room WHERE session_id = #{sessionId}
+    </delete>
+
+</mapper>

@@ -193,7 +193,6 @@ public class FileTransferDao {
         return transfers;
     }
 
-    // 修复resultSetToFileTransfer方法，处理null值
     private FileTransfer resultSetToFileTransfer(ResultSet rs) throws SQLException {
         FileTransfer transfer = new FileTransfer();
         transfer.setId(rs.getString("id"));

@@ -1,0 +1,9 @@
+server:
+  port: 11030
+spring:
+  profiles:
+    active: dev
+  application:
+    name: guru-im-signal
+
+

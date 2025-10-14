@@ -125,6 +125,58 @@ services:
     networks:
       - app-net
 
+  coturn:
+    image: coturn/coturn:4.6
+    container_name: coturn
+    restart: always
+    ports:
+      - "3478:3478"
+      - "3478:3478/udp"
+      - "5349:5349"
+      - "5349:5349/udp"
+      - "49152-49200:49152-49200/udp"
+    environment:
+      TZ: Asia/Shanghai
+    volumes:
+      - /usr/docker/data/coturn/conf:/etc/coturn:ro
+      - /usr/docker/data/coturn/logs:/var/log/coturn
+      - /usr/docker/data/coturn/certs:/var/lib/coturn/certs:ro
+    command: |
+      -c /etc/coturn/coturn.conf
+      --log-file=stdout
+      --simple-log
+    networks:
+      - app-net
+
+  mediasoup:
+    image: mediasoup-server:latest
+    container_name: mediasoup
+    restart: always
+    ports:
+      - "3000:3000"  # HTTP API 端口
+      - "40000-40100:40000-40100/udp"  # WebRTC UDP 端口范围
+    environment:
+      - NODE_ENV=production
+      - MEDIA_PORT=3000
+      - MEDIA_HOST=0.0.0.0
+      - ANNOUNCED_IP=192.168.100.130  # 服务器IP
+      - TURN_SERVER=coturn
+      - TURN_PORT=3478
+      - TURN_USERNAME=coturn
+      - TURN_PASSWORD=coturn
+    volumes:
+      - /usr/docker/data/mediasoup/logs:/app/logs
+    networks:
+      - app-net
+    depends_on:
+      - coturn
+    healthcheck:
+      test: ["CMD", "node", "-e", "const http = require('http'); http.get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); })"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
 networks:
   app-net:
     driver: bridge

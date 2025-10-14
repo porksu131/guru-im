@@ -74,6 +74,10 @@ public class TokenManager {
                 currentUser.setAccessToken(response.getData().getAccessToken());
                 currentUser.setRefreshToken(response.getData().getRefreshToken());
 
+                // 需要更新imClient中的user信息
+                mainFrame.getImClientManager().getUserInfo().setRefreshToken(response.getData().getRefreshToken());
+                mainFrame.getImClientManager().getUserInfo().setAccessToken(response.getData().getAccessToken());
+
                 // 重新启动定时器
                 startRefreshTimer();
 

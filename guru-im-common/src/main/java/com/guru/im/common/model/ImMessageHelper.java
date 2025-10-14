@@ -326,6 +326,8 @@ public class ImMessageHelper {
                 return buildMQMeta(MQTopic.OFFLINE_TOPIC, MQTag.BATCH_ACK, MQMessageType.BATCH_ACK);
             case READ_RECEIPT_REQ:
                 return buildMQMeta(MQTopic.SING_CHAT_TOPIC, MQTag.ACTION, MQMessageType.ACTION);
+            case SIGNALING_MESSAGE:
+                return buildMQMeta(MQTopic.SIGNAL_TOPIC, MQTag.SIGNAL, MQMessageType.SIGNAL);
             default:
                 throw new IllegalArgumentException("Unsupported im message type: " + imMessage.getBodyCase());
         }

@@ -268,7 +268,7 @@ public class FileTransferManager {
     }
 
     /**
-     * 多分片并行上传 - 修复多线程问题
+     * 多分片并行上传
      */
     private void uploadMultiplePartsInParallel(FileTransfer transfer, List<FileUploadPartInfo> partsToUpload,
                                                int completedParts, int totalParts, UploadProgressCallback callback) {

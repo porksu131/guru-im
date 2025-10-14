@@ -61,6 +61,8 @@ enum MessageType {
   OFFLINE_EVENT_REQUEST = 113; // 离线事件同步请求，由用户发起
   OFFLINE_EVENT_RESPONSE = 114; // 离线事件同步请求，由用户发起
 
+  SIGNALING = 150; // 信令
+
   COMMON_RESPONSE = 200; // 通用响应体
 }
 

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.guru.im.signal.mapper.CallParticipantMapper">
+
+    <resultMap id="BaseResultMap" type="com.guru.im.signal.model.pojo.CallParticipant">
+        <id column="id" property="id" />
+        <result column="session_id" property="sessionId" />
+        <result column="user_id" property="userId" />
+        <result column="device_id" property="deviceId" />
+        <result column="participant_state" property="participantState" />
+        <result column="is_inviter" property="isInviter" />
+        <result column="join_time" property="joinTime" />
+        <result column="leave_time" property="leaveTime" />
+        <result column="duration" property="duration" />
+        <result column="media_state" property="mediaState" />
+        <result column="selected_device" property="selectedDevice" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+    </resultMap>
+
+    <insert id="insert" parameterType="com.guru.im.signal.model.pojo.CallParticipant">
+        INSERT INTO im_call_participant(
+            id, session_id, user_id, device_id, participant_state,
+            is_inviter, join_time, leave_time, duration, media_state,
+            selected_device, create_time, update_time
+        ) VALUES(
+                    #{id}, #{sessionId}, #{userId}, #{deviceId}, #{participantState},
+                    #{isInviter}, #{joinTime}, #{leaveTime}, #{duration}, #{mediaState},
+                    #{selectedDevice}, #{createTime}, #{updateTime}
+                )
+    </insert>
+
+    <select id="selectSessionParticipants" resultMap="BaseResultMap">
+        SELECT * FROM im_call_participant
+        WHERE session_id = #{sessionId}
+        ORDER BY create_time ASC
+    </select>
+
+    <update id="updateParticipantState">
+        UPDATE im_call_participant
+        SET participant_state = #{state}, update_time = #{updateTime}
+        WHERE session_id = #{sessionId} AND user_id = #{userId} AND device_id = #{deviceId}
+    </update>
+
+    <update id="updateParticipantJoinInfo">
+        UPDATE im_call_participant
+        SET participant_state = 2, join_time = #{joinTime}, update_time = #{updateTime}
+        WHERE session_id = #{sessionId} AND user_id = #{userId} AND device_id = #{deviceId}
+    </update>
+
+    <update id="updateParticipantLeaveInfo">
+        UPDATE im_call_participant
+        SET participant_state = 4,
+            leave_time = #{leaveTime},
+            duration = #{duration},
+            update_time = #{updateTime}
+        WHERE session_id = #{sessionId} AND user_id = #{userId} AND device_id = #{deviceId}
+    </update>
+
+    <select id="countParticipantsByState" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM im_call_participant
+        WHERE session_id = #{sessionId} AND participant_state IN
+        <foreach collection="states" item="state" open="(" separator="," close=")">
+            #{state}
+        </foreach>
+    </select>
+
+    <select id="selectParticipant" resultMap="BaseResultMap">
+        SELECT * FROM im_call_participant
+        WHERE session_id = #{sessionId} AND user_id = #{userId} AND device_id = #{deviceId}
+    </select>
+
+</mapper>

@@ -11,5 +11,6 @@ public enum IMEventType {
     USER_PRESENCE,
     READ_RECEIPT,
     OFFLINE_DEVICE,
+    SIGNALING_MESSAGE,
     // 其他事件类型...
 }

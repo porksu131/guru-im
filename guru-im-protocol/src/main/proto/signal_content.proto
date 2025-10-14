@@ -1,0 +1,292 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.guru.im.protocol.model";
+
+import "base.proto";
+
+// 通话媒体类型
+enum MediaType {
+  MEDIA_AUDIO_ONLY = 0;
+  MEDIA_VIDEO = 1;
+  MEDIA_SCREEN_SHARE = 2;
+  MEDIA_GROUP_VIDEO = 3;
+}
+
+message SignalMessageAck {
+  int64 message_id = 1;
+  int64 session_id = 2;
+  int64 timestamp = 3;
+
+}
+
+// 呼叫请求
+message CallRequest {
+  MediaType media_type = 1;        // 媒体类型
+  repeated int64 target_users = 2; // 目标用户（群聊时多个）
+  int64 group_id = 3;              // 群组ID（群通话时）
+  string call_subject = 4;         // 通话主题
+  int32 timeout_seconds = 5;       // 呼叫超时时间
+}
+
+// 呼叫请求响应
+message CallRequestResponse {
+  int64 session_id = 1;
+  string room_id = 2;
+  bool success = 3;
+  string error_message = 4;
+}
+
+// 呼叫响应
+message CallResponse {
+  bool accepted = 1;               // 是否接听
+  string selected_device = 2;      // 选择的设备ID（服务器决定）
+  string reason = 3;               // 拒绝原因
+}
+
+// mediasoup传输创建
+message MediasoupTransportCreate {
+  string room_id = 1;
+  string transport_options = 2; // JSON格式的传输选项
+}
+
+// mediasoup传输连接
+message MediasoupTransportConnect {
+  string transport_id = 1;
+  string dtls_parameters = 2; // JSON格式的DTLS参数
+}
+
+// 传输连接响应
+message MediasoupTransportConnectResponse {
+  string transport_id = 1;
+  bool success = 2;
+  string error_message = 3; // 失败时的错误信息
+}
+
+// mediasoup生产者创建
+message MediasoupProduce {
+  string transport_id = 1;
+  string kind = 2; // "audio" or "video"
+  string rtp_parameters = 3; // JSON格式的RTP参数
+}
+
+// mediasoup生产者创建响应
+message MediasoupProduceResponse {
+  string producer_id = 1;
+  string kind = 2;
+}
+
+// mediasoup消费者创建
+message MediasoupConsume {
+  string transport_id = 1;
+  string producer_id = 2;
+  string rtp_capabilities = 3; // JSON格式的RTP能力
+}
+
+// mediasoup消费者创建响应
+message MediasoupConsumeResponse {
+  string consumer_id = 1;
+  string producer_id = 2;
+  string kind = 3;
+  string rtp_parameters = 4; // JSON格式的RTP参数
+  string type = 5; // "simple", "simulcast", "svc"
+}
+
+// mediasoup消费者恢复
+message MediasoupConsumerResume {
+  string consumer_id = 1;
+}
+
+// RTP能力请求
+message RtpCapabilitiesRequest {
+  string room_id = 1;
+}
+
+// RTP能力响应
+message RtpCapabilitiesResponse {
+  string room_id = 1;
+  string rtp_capabilities = 2; // JSON格式的RTP能力
+}
+
+// 房间生产者请求
+message RoomProducersRequest {
+  string room_id = 1;
+}
+
+// 生产者信息
+message ProducerInfo {
+  string producer_id = 1;
+  string peer_id = 2;
+  string kind = 3;
+}
+
+// 房间生产者响应
+message RoomProducersResponse {
+  string room_id = 1;
+  repeated ProducerInfo producers = 2;
+  bool is_new_producer = 3; // 标记是否为新生产者通知
+}
+
+// 挂断消息
+message CallHangup {
+  string reason = 1;               // 挂断原因
+  int32 duration = 2;              // 通话时长（秒）
+  HangupType hangup_type = 3;      // 挂断类型
+  int64 initiated_by = 4;          // 挂断发起者用户ID
+
+  enum HangupType {
+    NORMAL = 0;
+    TIMEOUT = 1;
+    BUSY = 2;
+    REJECT = 3;
+    NETWORK_ERROR = 4;
+    DEVICE_CHANGE = 5;
+    USER_HANGUP = 6;           // 用户主动挂断
+  }
+}
+
+// 振铃消息（由服务器发送给选定的设备）
+message Ringing {
+  string device_id = 1;            // 振铃设备ID
+  int64 ring_start_time = 2;       // 振铃开始时间
+  repeated string ringing_devices = 3; // 所有振铃设备
+}
+
+// 状态同步消息
+message CallStateSync {
+  int64 session_id  = 1;
+  CallState call_state = 2;
+  repeated Participant participants = 3; // 参与者列表
+  string active_device = 4;        // 当前活跃设备
+  int64 state_timestamp = 5;
+
+  // 通话状态
+  enum CallState {
+    IDLE = 0;
+    DIALING = 1;        // 拨号中
+    RINGING = 2;        // 振铃中
+    CONNECTING = 3;     // 连接中
+    ACTIVE = 4;         // 通话中
+    HANGING_UP = 5;     // 挂断中
+    ENDED = 6;          // 已结束
+  }
+}
+
+// 参与者信息
+message Participant {
+  int64 user_id = 1;
+  string device_id = 2;
+  ParticipantState state = 3;
+  int64 join_time = 4;
+  int64 leave_time = 5;
+  MediaState media_state = 6;
+  bool is_inviter = 7;             // 是否是邀请者
+
+  // 参与者状态
+  enum ParticipantState {
+    INVITED = 0;
+    RINGING = 1;
+    JOINED = 2;
+    DECLINED = 3;
+    LEFT = 4;
+    TIMEOUT = 5;
+    KICKED = 6;
+    RECONNECTING = 7;
+  }
+}
+
+// 媒体状态
+message MediaState {
+  bool audio_enabled = 1;
+  bool video_enabled = 2;
+  bool screen_share_enabled = 3;
+  bool audio_muted = 4;
+  bool video_muted = 5;
+}
+
+// 会议相关
+
+// 会议邀请
+message ConferenceInvite {
+  int64 conference_id = 1;        // 会议ID
+  string conference_title = 2;     // 会议标题
+  MediaType media_type = 3;        // 媒体类型
+  repeated int64 invitees = 4;     // 被邀请用户列表
+  int64 expires_at = 5;            // 邀请过期时间
+  string password = 6;             // 会议密码（可选）
+  int64 host_user = 7;             // 主持人用户ID
+}
+
+// 会议邀请响应
+message ConferenceInviteResponse {
+  int64 session_id = 1;
+  string room_id = 2;
+  bool success = 3;
+  string error_message = 4;
+}
+
+// 加入会议
+message ConferenceJoin {
+  int64 conference_id = 1;        // 会议ID
+  string password = 2;             // 会议密码（如果有）
+  MediaState initial_media_state = 3; // 初始媒体状态
+  bool is_rejoin = 4;              // 是否是重新加入
+}
+
+// 离开会议
+message ConferenceLeave {
+  int64 conference_id = 1;        // 会议ID
+  LeaveReason reason = 2;          // 离开原因
+  int64 duration = 3;              // 参会时长（秒）
+
+  // 离开原因
+  enum LeaveReason {
+    USER_LEFT = 0;           // 用户主动离开
+    USER_HANGUP = 1;         // 用户挂断
+    NETWORK_ERROR = 2;       // 网络错误
+    DEVICE_SWITCH = 3;       // 设备切换
+    KICKED = 4;              // 被踢出
+    CONFERENCE_ENDED = 5;    // 会议结束
+  }
+}
+
+// 踢出会议
+message ConferenceKick {
+  int64 conference_id = 1;        // 会议ID
+  int64 kicked_user = 2;           // 被踢用户ID
+  string reason = 3;               // 踢出原因
+  int64 operator_user = 4;         // 操作者用户ID
+}
+
+// 会议更新
+message ConferenceUpdate {
+  int64 conference_id = 1;        // 会议ID
+  ConferenceUpdateType update_type = 2; // 更新类型
+  string conference_title = 3;   // 新的会议标题
+  MediaType media_type = 4;      // 媒体类型变更
+  repeated int64 new_invitees = 5; // 新增被邀请人
+  int64 new_host = 6;            // 新的主持人
+}
+
+enum ConferenceUpdateType {
+  TITLE_CHANGE = 0;
+  MEDIA_TYPE_CHANGE = 1;
+  INVITEES_ADD = 2;
+  HOST_CHANGE = 3;
+}
+
+// 媒体控制
+message MediaControl {
+  int64 session_id  = 1;
+  MediaControlType control_type = 2;
+  bool enabled = 3;
+  int64 target_user = 4;           // 目标用户（空表示所有）
+}
+
+enum MediaControlType {
+  MUTE_AUDIO = 0;
+  MUTE_VIDEO = 1;
+  DISABLE_SCREEN_SHARE = 2;
+  FORCE_MUTE_AUDIO = 3;            // 强制静音（主持人权限）
+  FORCE_DISABLE_VIDEO = 4;         // 强制关闭视频（主持人权限）
+}

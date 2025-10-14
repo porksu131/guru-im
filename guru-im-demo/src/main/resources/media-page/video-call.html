@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频通话</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="./css/common.css">
+    <link rel="stylesheet" href="./css/video-call.css">
+</head>
+<body>
+<div class="video-call-container">
+    <!-- 头部信息 -->
+    <div class="header" id="header">
+        <div class="call-title">视频通话</div>
+        <div class="timer" id="timer">00:00</div>
+    </div>
+
+    <!-- 主要内容区域 -->
+    <div class="content-area">
+        <!-- 远程视频 - 主显示区域 -->
+        <div class="remote-video-container" id="remoteVideoContainer">
+            <div class="video-placeholder" id="remoteVideoPlaceholder">
+                <div class="placeholder-avatar" id="remoteAvatar">U</div>
+                <div class="placeholder-name" id="remoteName">用户</div>
+                <div class="placeholder-status" id="remoteStatus">等待对方视频...</div>
+            </div>
+            <video class="remote-video" id="remoteVideo" autoplay playsinline></video>
+        </div>
+
+        <!-- 本地视频 - 画中画 -->
+        <div class="local-video-container" id="localVideoContainer">
+            <div class="video-overlay">
+                <div class="video-status">本地视频</div>
+            </div>
+            <div class="video-placeholder small" id="localVideoPlaceholder">
+                <div class="placeholder-avatar small">我</div>
+            </div>
+            <video class="local-video" id="localVideo" autoplay playsinline muted></video>
+        </div>
+
+        <!-- 设备选择器 -->
+        <div class="device-selector" id="deviceSelector">
+            <div class="device-header">
+                <span>设备设置</span>
+                <i class="fas fa-times close-devices" id="closeDevices"></i>
+            </div>
+            <div class="device-group">
+                <label>摄像头</label>
+                <select class="device-select" id="videoDeviceSelect">
+                    <option value="">选择摄像头</option>
+                </select>
+            </div>
+            <div class="device-group">
+                <label>麦克风</label>
+                <select class="device-select" id="audioDeviceSelect">
+                    <option value="">选择麦克风</option>
+                </select>
+            </div>
+            <div class="device-group">
+                <label>扬声器</label>
+                <select class="device-select" id="speakerSelect">
+                    <option value="">选择扬声器</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- 来电操作按钮 -->
+    <div class="incoming-call-actions hidden" id="incomingCallActions">
+        <button class="action-btn reject-btn" id="rejectCallBtn">
+            <i class="fas fa-phone-slash"></i>
+        </button>
+        <button class="action-btn accept-btn" id="acceptCallBtn">
+            <i class="fas fa-phone"></i>
+        </button>
+    </div>
+
+    <!-- 去电操作按钮 -->
+    <div class="outgoing-call-actions hidden" id="outgoingCallActions">
+        <button class="action-btn hangup-action-btn" id="outgoingHangupBtn">
+            <i class="fas fa-phone-slash"></i>
+        </button>
+    </div>
+
+    <!-- 通话中控制按钮 -->
+    <div class="controls" id="controls">
+        <button class="control-btn" id="muteBtn" title="静音">
+            <i class="fas fa-microphone"></i>
+            <div class="tooltip">静音</div>
+        </button>
+        <button class="control-btn" id="videoBtn" title="关闭视频">
+            <i class="fas fa-video"></i>
+            <div class="tooltip">关闭视频</div>
+        </button>
+        <button class="control-btn hangup-btn" id="hangupBtn" title="挂断">
+            <i class="fas fa-phone-slash"></i>
+            <div class="tooltip">挂断</div>
+        </button>
+        <button class="control-btn" id="deviceBtn" title="设备">
+            <i class="fas fa-cog"></i>
+            <div class="tooltip">设备</div>
+        </button>
+        <button class="control-btn" id="switchCameraBtn" title="切换摄像头">
+            <i class="fas fa-sync-alt"></i>
+            <div class="tooltip">切换摄像头</div>
+        </button>
+    </div>
+</div>
+
+<!-- 加载遮罩 -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <div>初始化设备中...</div>
+</div>
+
+<!-- 音效 -->
+<audio id="ringtone" loop preload="auto">
+    <source src="./sounds/ring_tone.mp3" type="audio/mpeg">
+</audio>
+<audio id="callTone" loop preload="auto">
+    <source src="./sounds/call_tone.mp3" type="audio/mpeg">
+</audio>
+<audio id="hangupTone" preload="auto">
+    <source src="./sounds/hangup_tone.mp3" type="audio/mpeg">
+</audio>
+
+<!-- 脚本文件 -->
+<script src="./js/dist/mediasoup-client.min.js"></script>
+<script src="./js/core/common.js"></script>
+<script src="./js/core/device-manager.js"></script>
+<script src="./js/core/signaling-handler.js"></script>
+<script src="./js/core/mediasoup-client.js"></script>
+<script src="./js/video-call.js"></script>
+</body>
+</html>

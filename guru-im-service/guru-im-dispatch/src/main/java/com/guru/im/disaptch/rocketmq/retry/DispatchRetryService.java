@@ -226,7 +226,7 @@ public class DispatchRetryService {
     private void handleRetryFailure(DispatchRetryContext context) {
         log.warn("Push retry failed after {} attempts for message: {}, uid: {}, failed nodes: {}",
                 context.getRetryCount(), context.getMessageId(), context.getUid(),
-                context.getFailedGatewayNodes());
+                String.join(",", context.getFailedGatewayNodes().stream().map(DeviceStatus::getGatewayAddress).toList()));
 
         // 清理上下文
         redisTemplate.delete(context.getRedisKey());

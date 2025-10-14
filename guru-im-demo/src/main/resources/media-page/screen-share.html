@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>桌面共享</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="./css/common.css">
+    <link rel="stylesheet" href="./css/screen-share.css">
+</head>
+<body>
+<div class="screen-share-container">
+    <!-- 头部区域 -->
+    <div class="header">
+        <div class="call-title">桌面共享</div>
+        <div class="timer" id="timer">00:00</div>
+    </div>
+
+    <!-- 内容区域 -->
+    <div class="content-area">
+        <!-- 屏幕共享区域 -->
+        <div class="screen-area">
+            <div class="shared-screen" id="sharedScreen">
+                <div class="screen-placeholder" id="screenPlaceholder">
+                    <div class="icon"><i class="fas fa-desktop"></i></div>
+                    <div id="screenPlaceholderText">准备开始屏幕共享</div>
+                </div>
+                <video id="screenVideo" autoplay muted style="width: 100%; height: 100%; object-fit: contain; display: none;"></video>
+            </div>
+
+            <!-- 屏幕控制区域 -->
+            <div class="screen-controls">
+                <!-- 发起方按钮 -->
+                <button class="control-btn" id="shareScreenBtn" title="开始共享" style="display: none;">
+                    <i class="fas fa-desktop"></i>
+                    <div class="tooltip">开始共享</div>
+                </button>
+                <button class="control-btn" id="pauseShareBtn" title="暂停共享" style="display: none;">
+                    <i class="fas fa-pause"></i>
+                    <div class="tooltip">暂停共享</div>
+                </button>
+                <button class="control-btn" id="stopShareBtn" title="停止共享" style="display: none;">
+                    <i class="fas fa-stop"></i>
+                    <div class="tooltip">停止共享</div>
+                </button>
+
+                <!-- 接听方按钮 -->
+                <div class="call-actions" id="incomingCallActions" style="display: none;">
+                    <button class="control-btn reject-btn" id="rejectCallBtn" title="拒绝">
+                        <i class="fas fa-phone-slash"></i>
+                        <div class="tooltip">拒绝</div>
+                    </button>
+                    <button class="control-btn accept-btn" id="acceptCallBtn" title="接听">
+                        <i class="fas fa-phone"></i>
+                        <div class="tooltip">接听</div>
+                    </button>
+                </div>
+
+                <!-- 通用按钮 -->
+                <button class="control-btn hangup-btn" id="hangupBtn" title="挂断" style="display: none;">
+                    <i class="fas fa-phone-slash"></i>
+                    <div class="tooltip">挂断</div>
+                </button>
+            </div>
+
+            <!-- 音频可视化区域 -->
+            <div class="audio-visualizer">
+                <div style="text-align: center; margin-bottom: 8px;">音频状态</div>
+                <div class="audio-bars" id="audioBars">
+                    <!-- 音频可视化条将通过JS动态生成 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 侧边栏 -->
+        <div class="sidebar">
+            <div class="sidebar-title">参与者</div>
+            <div class="participants-list" id="participantsList">
+                <!-- 参与者列表将通过JS动态生成 -->
+            </div>
+
+            <div class="sidebar-title">音频控制</div>
+            <div class="participants-list">
+                <div class="participant-item">
+                    <div class="participant-info">
+                        <div class="participant-name">麦克风</div>
+                    </div>
+                    <button class="control-btn" id="muteBtn" title="静音" style="width: 40px; height: 40px;">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                </div>
+                <div class="participant-item">
+                    <div class="participant-info">
+                        <div class="participant-name">扬声器</div>
+                    </div>
+                    <button class="control-btn" id="speakerBtn" title="静音扬声器" style="width: 40px; height: 40px;">
+                        <i class="fas fa-volume-up"></i>
+                    </button>
+                </div>
+                <div class="participant-item">
+                    <div class="participant-info">
+                        <div class="participant-name">设备设置</div>
+                    </div>
+                    <button class="control-btn" id="deviceBtn" title="设备设置" style="width: 40px; height: 40px;">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 设备选择器 -->
+<div class="device-selector" id="deviceSelector">
+    <div class="device-header">
+        <span>设备设置</span>
+        <i class="fas fa-times close-devices" id="closeDevices"></i>
+    </div>
+    <div class="device-group">
+        <label>麦克风</label>
+        <select class="device-select" id="audioDeviceSelect">
+            <option value="">选择麦克风</option>
+        </select>
+    </div>
+    <div class="device-group">
+        <label>扬声器</label>
+        <select class="device-select" id="speakerSelect">
+            <option value="">选择扬声器</option>
+        </select>
+    </div>
+</div>
+
+<!-- 加载遮罩 -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <div>初始化中...</div>
+</div>
+
+<!-- 音频元素 -->
+<audio id="ringtone" loop preload="auto">
+    <source src="./sounds/ring_tone.mp3" type="audio/mpeg">
+</audio>
+
+<audio id="callTone" loop preload="auto">
+    <source src="./sounds/call_tone.mp3" type="audio/mpeg">
+</audio>
+
+<audio id="hangupTone" preload="auto">
+    <source src="./sounds/hangup_tone.mp3" type="audio/mpeg">
+</audio>
+
+<!-- 脚本文件 -->
+<script src="./js/dist/mediasoup-client.min.js"></script>
+<script src="./js/core/common.js"></script>
+<script src="./js/core/device-manager.js"></script>
+<script src="./js/core/signaling-handler.js"></script>
+<script src="./js/core/mediasoup-client.js"></script>
+<script src="./js/screen-share.js"></script>
+</body>
+</html>
