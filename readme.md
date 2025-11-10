@@ -1,9 +1,8 @@
 # guru-im
 ## 项目介绍
-作为一个即时通讯系统，系统采用了分布式架构设计，引入了 Netty 框架，以实现高性能、实时的消息传递，通过异步架构实现目标流量可达到百万连接并发。
+Guru IM 是一个基于分布式架构设计的高性能即时通讯系统，采用 Netty 框架实现实时消息传递，通过异步架构支持百万级并发连接。
 
-注：本项目只是个人学习实践，仅作记录、分享和交流。
-总结：多实战练习还是能够得到很多提升的。
+注：本项目为个人学习实践，主要用于技术记录、分享与交流。
 
 ## 项目功能
 - [x] 客户端sdk
@@ -58,137 +57,100 @@
 ## 消息流转时序
 ![消息流转大体流程.png](asset/guru-im-message-transport.png)
 
-## 各个分层主要技术栈
+## 技术栈
 - 应用层：
-    - 桌面应用程序：java swing、netty、sqlite、javacv、ffmpeg、jcef、mediasoup
+    - 桌面应用程序：Java Swing、Netty、SQLite、JavaCV、FFmpeg、JCEF、Mediasoup
 - 网关层：
-    - tcp网关：spring boot、netty、nacos、redis、loadbalancer、httpclient、jwt
-    - http网关：spring cloud gateway、loadbalancer、nacos、jwt
+    - TCP网关：Spring Boot、Netty、Nacos、Redis、LoadBalancer、HttpClient、JWT
+    - HTTP网关：Spring Cloud Gateway、LoadBalancer、Nacos、JWT
 - 分发层：spring boot、netty、nacos、redis、rocketmq
 - 微服务层：
-    - 单聊：spring boot web、nacos、rocketmq、mysql
-    - 离线：spring boot web、nacos、rocketmq、mysql、redis
-    - 用户：spring boot web、nacos、mysql、redis
-    - 认证：spring boot web、security、nacos、mysql、redis
-    - 文件：spring boot web、nacos、mysql、minio
-    - mediasoup: WebRTC 视频会议、语音通话和实时数据流应用的服务器端
-- 存储层：mysql、redis
+    - 单聊服务：Spring Boot Web、Nacos、RocketMQ、MySQL
+    - 离线服务：Spring Boot Web、Nacos、RocketMQ、MySQL、Redis
+    - 用户服务：Spring Boot Web、Nacos、MySQL、Redis
+    - 认证服务：Spring Boot Web、Security、Nacos、MySQL、Redis
+    - 文件服务：Spring Boot Web、Nacos、MySQL、MinIO
+    - Mediasoup服务: WebRTC 视频会议、语音通话和实时数据流服务器
+- 存储层：MySQL、Redis
 
-- 部署：
-  - docker-compose快速环境搭建：mysql、nacos、redis、rocketmq、minio、coturn、mediasoup
-  - k8s + jenkins + gitlab + harbor
+- 部署方案：
+  - 快速环境搭建：Docker Compose部署（MySQL、Nacos、Redis、RocketMQ、MinIO、Coturn、Mediasoup）
+  - 生产环境：自动化部署（K8s + Jenkins + GitLab + Harbor）
 
 ## 项目模块解析
 ### 目录结构
 ```text
-|-- guru-im
-|   |-- asset
-|   |-- doc
-|   |   |-- devops
-|   |   |-- docker
-|   |   |-- k8s
-|   |   `-- sql
-|   |-- guru-im-common
-|   |   |-- pom.xml
-|   |   `-- src
-|   |-- guru-im-core
-|   |   |-- pom.xml
-|   |   `-- src
-|   |-- guru-im-demo
-|   |   |-- pom.xml
-|   |   `-- src
-|   |-- guru-im-mediasoup
-|   |-- guru-im-protocol
-|   |   |-- pom.xml
-|   |   `-- src
-|   |-- guru-im-sdk-java
-|   |   |-- pom.xml
-|   |   `-- src
-|   |-- guru-im-service
-|   |   |-- guru-im-auth
-|   |   |-- guru-im-dispatch
-|   |   |-- guru-im-file
-|   |   |-- guru-im-gateway-http
-|   |   |-- guru-im-gateway-tcp
-|   |   |-- guru-im-group-chat
-|   |   |-- guru-im-job
-|   |   |-- guru-im-offline
-|   |   |-- guru-im-signal
-|   |   |-- guru-im-single-chat
-|   |   |-- guru-im-user
-|   |   `-- pom.xml
-|   |-- guru-im-starter
-|   |   |-- guru-im-cache-spring-boot-starter
-|   |   |-- guru-im-core-spring-boot-starter
-|   |   |-- guru-im-mq-spring-boot-starter
-|   |   |-- guru-im-nacos-spring-boot-starter
-|   |   |-- guru-im-remote-spring-boot-starter
-|   |   |-- guru-im-security-spring-boot-starter
-|   |   `-- pom.xml
-|   |-- pom.xml
-|   `-- readme.md
+guru-im/
+├── asset/                          # 资源文件
+├── doc/                            # 文档
+│   ├── devops/                     # 运维文档
+│   ├── docker/                     # Docker配置
+│   ├── k8s/                        # K8s配置
+│   └── sql/                        # 数据库脚本
+├── guru-im-common/                 # 公共模块
+├── guru-im-core/                   # 核心通信包
+├── guru-im-demo/                   # 客户端示例
+├── guru-im-mediasoup/              # 媒体服务
+├── guru-im-protocol/               # 通信协议
+├── guru-im-sdk-java/               # Java SDK
+├── guru-im-service/                # 微服务集合
+│   ├── guru-im-auth/               # 认证服务
+│   ├── guru-im-dispatch/           # 消息分发
+│   ├── guru-im-file/               # 文件服务
+│   ├── guru-im-gateway-http/       # HTTP网关
+│   ├── guru-im-gateway-tcp/        # TCP网关
+│   ├── guru-im-group-chat/         # 群聊服务
+│   ├── guru-im-job/                # 定时任务
+│   ├── guru-im-offline/            # 离线服务
+│   ├── guru-im-signal/             # 信令服务
+│   ├── guru-im-single-chat/        # 单聊服务
+│   └── guru-im-user/               # 用户服务
+├── guru-im-starter/                # 公共Starter
+│   ├── guru-im-cache-spring-boot-starter/      # 缓存配置
+│   ├── guru-im-core-spring-boot-starter/       # 核心配置
+│   ├── guru-im-mq-spring-boot-starter/         # 消息队列配置
+│   ├── guru-im-nacos-spring-boot-starter/      # 注册中心配置
+│   ├── guru-im-remote-spring-boot-starter/     # 远程调用配置
+│   └── guru-im-security-spring-boot-starter/   # 安全配置
+└── pom.xml
 ```
 
-#### guru-im-common
-- 定义：公共包
-- 功能：提供工具类、常量、枚举、模型实体
+#### 公共模块 (guru-im-common)
+- 定位：公共基础包
+- 功能：工具类、常量定义、枚举类型、数据模型
 
-#### guru-im-netty
-- 定义：netty相关操作
-- 功能：目录，起到模块分组作用
-    - guru-im-core
-        - 功能：提供基于netty的双向通信**核心包**
-    - guru-im-dispatch
-        - 功能：提供基于netty+rocketmq的消息分发和消息投递功能实现，监听微服务消息，推送消息到gateway，接收gateway消息，推送消息到mq
-    - guru-im-demo
-        - 功能：提供netty客户端接入服务端的示例，提供简单的聊天功能示例实现
-    - guru-im-gateway-tcp
-        - 功能：
-            - netty-server：负责与用户的客户端连接、认证、心跳、消息收发，只跟用户和dispatch交互，
-            - netty-client：负责与dispatch连接、转发消息到dispatch、接收dispatch消息后通过nettyServer转发消息到用户，即与dispatch的rpc交互，
-    - guru-im-gateway-websocket （暂无，由于同tcp差不多且复用tcp逻辑，已经融合到tcp模块中，启动参数中来配置启动tcp或者websocket服务）
-        - 功能：提供基于netty的websocket网关实现，负责与用户的客户端的websocket连接，与dispatch连接，起到网关作用
-#### guru-im-service
-- 定义：微服务相关
-- 功能：目录，起到模块分组作用
-    - guru-im-auth
-        - 功能：提供基于spring security，jwt的用户认证功能，生成jwt的accessToken以及refreshToken，提供公钥查询，被有认证功能tcp和http网关所依赖，所以auth要先部署跑起来
-    - guru-im-gateway-http
-        - 功能：提供基于spring gateway的网关功能，负责http请求的路由和转发，所有客户端的请求都要经过此来转发
-    - guru-im-single-chat
-        - 功能：提供单聊功能，主要负责消费来自dispatch的mq消息、消息的持久化、查询、消息投递到分发系统dispatch
-    - guru-im-offline
-        - 功能：提供离线消息功能，主要负责消费来自dispatch的用户离线设备消息、离线消息的持久化和查询、批量离线消息投递到dispatch
-    - guru-im-user
-        - 功能：提供用户信息查询，修改、好友功能，主要负责消费来自dispatch的mq消息、好友在线状态推送到dispatch
-    - guru-im-file
-        - 功能：提供minio文件分片文件上传，分片文件合并，minio文件下载url功能
-    - guru-im-signal
-        - 功能：信令服务，为webrtc语音视频媒体交互提供信令服务，负责会议房间的管理，信令的转发，通过http与mediasoup交互
-#### guru-im-starter
-- 定义：抽取微服务的公共配置组件
-- 功能：目录，起到模块分组作用
-    - guru-im-cache-spring-boot-starter
-        - 功能：封装redis缓存相关的spring-boot自动配置
-    - guru-im-core-spring-boot-starter
-        - 功能：封装spring基础上下文的spring-boot自动配置
-    - guru-im-mq-spring-boot-starter
-        - 功能：封装消息队列的spring-boot自动配置
-    - guru-im-nacos-spring-boot-starter
-        - 功能：封装nacos的注册中心和配置中心的spring-boot自动配置
-    - guru-im-remote-spring-boot-starter
-      - 功能：封装负载均衡的spring restTemplate功能，提供微服务间的远程调用能力。
-    - guru-im-security-spring-boot-starter
-        - 功能：封装jwt生成和校验的spring-boot自动配置
+#### Netty通信模块
+- 核心通信包 (guru-im-core)：基于Netty的双向通信核心实现
+- 消息分发 (guru-im-dispatch)：基于Netty+RocketMQ的消息分发与投递
+- 客户端示例 (guru-im-demo)：Netty客户端接入示例
+- TCP网关 (guru-im-gateway-tcp)：用户连接管理、消息转发
+- WebSocket网关：已融合到TCP模块，通过配置启动参数切换
+
+#### 微服务模块
+- 认证服务 (guru-im-auth)：基于Spring Security + JWT的用户认证
+- HTTP网关 (guru-im-gateway-http)：基于Spring Gateway的请求路由
+- 单聊服务 (guru-im-single-chat)：单聊消息处理与持久化
+- 离线服务 (guru-im-offline)：离线消息存储与推送
+- 用户服务 (guru-im-user)：用户信息管理、好友关系
+- 文件服务 (guru-im-file)：MinIO分片文件上传下载
+- 信令服务 (guru-im-signal)：WebRTC信令转发、会议房间管理
+
+#### 公共Starter模块
+- 缓存配置：Redis缓存自动配置
+- 核心配置：Spring基础上下文配置
+- 消息队列：RocketMQ自动配置
+- 注册中心：Nacos服务发现与配置管理
+- 远程调用：负载均衡RestTemplate
+- 安全配置：JWT生成与校验
 
 ### 亮点
-- 双向通信：gateway网关既有netty客户端，也有netty服务端，其中服务端与用户连接，客户端与dispatch连接。
-- 引入消息队列：使服务之间解耦，服务负责的功能更为单一，逻辑更为清晰，能有效提升系统的并发处理能力，减轻数据库的压力。
-- 无状态服务：netty服务器可水平扩展服务节点，应对更高的流量。
-- k8s部署：通过配置转发tcp协议的流量来实现客户端与服务端的tcp连接。
-- 加入了语音视频会议的IM交互功能。
-- 具备完整的示例：通过示例实现各个基本的业务功能，以验证基础架构健壮性。
-- 知识覆盖面广且实用：从前端到后端提供完整的调用链路，供学习、笔记、借鉴都不错。
+- 双向通信：网关同时集成Netty服务端（用户连接）与客户端（分发系统连接）
+- 消息队列解耦：服务间通过MQ解耦，提升系统并发处理能力
+- 无状态服务：支持水平扩展，应对高并发场景
+- K8s原生支持：通过配置实现TCP协议流量转发
+- 多媒体支持：集成语音视频会议等高级功能
+- 完整示例：提供完整业务功能示例，验证架构健壮性
+- 技术全面：覆盖前后端完整技术栈，适合学习参考
 
 ### 不足
 - 部分硬编码写死：待做成可配置
@@ -197,32 +159,30 @@
 - 有时候急着实现和调试，很多地方的代码注释还不够，但关键的注释还是有的，需要交流请联系
 
 ### netty通信设计
-- 核心消息类：ImMessage，支持类型request（请求）、response（响应）、notify（通知）、heartbeat（心跳）
-- 核心消息处理类：MessageProcessManager,封装不同消息类型的通用处理逻辑，提供核心的消息发送和消息处理实现
-- Netty的编解码：ImMessageDecoder、ImMessageEncoder，使用长度域解析器LengthFieldBasedFrameDecoder
-- 数据序列化：跨语言的性能佼佼者 google protobuf
-- 回调设计：通过消息id作为桥梁，发送后缓存该消息的异步响应，收到响应时通过消息id找到异步响应，并设置响应结果以及通知异步响应执行成功或失败的回调
-- 流控设计：通过Semaphore控制，避免瞬时流量过大，资源挤压，压垮服务
+- 核心消息类：ImMessage，支持类型request（请求）、response（响应）、oneway（单向）
+- 核心消息处理类：MessageProcessManager，封装不同消息类型的通用处理逻辑，提供核心的消息发送和消息处理实现
+- Netty的编解码：ImMessageDecoder、ImMessageEncoder，LengthFieldBasedFrameDecoder + Protobuf序列化
+- 异步回调：基于消息ID的响应回调机制
+- 流控设计：Semaphore防止资源过载
 
-### 如何保证消息的可靠性（消息零丢失）
+### 消息可靠性保障
 解决方案：
 - 客户端：
-    - 消息确认，客户端需要对发送结果进行ack确认处理，比如通知用户发送失败或程序后台尝试失败重试
-    - 每次上线向服务端发起通知，请求加载离线消息，若本地发现序列好异常，可触发按序列号拉取丢失消息。
-    - 客户端打开会话窗口时，更新本地未读消息状态为已读，并将这些消息发送已读回执到服务端
-    - 客户端需要支持同一消息幂等处理，避免服务端网络异常等重发导致消息重复
+    - 消息确认机制，支持失败重试
+    - 上线时加载离线消息，序列号异常时触发补拉
+    - 已读回执同步
+    - 消息幂等处理
 - 服务端：
-    - 持久化消息，设计消息状态，
-    - 转发系统即时处理转发失败的消息，直接进行重试n次
-    - 发送失败或重发失败，保存为离线消息
+    - 消息持久化与状态管理
+    - 转发失败即时重试
+    - 失败消息转为离线存储
 
-### 如何保证消息的顺序性
+### 消息顺序性保障
 - 顺序问题：在分布式系统中，消息可能乱序到达。我们需要在客户端和服务器端都采取一些措施来保证消息的顺序。
-- 解决方案：会话级的严格递增序列号，不管是在发送方还是接收方，客户端的会话中所有消息按(sequenceId,clientSeq)排序。  
-  好处：保证了客户端发送的消息顺序不会变，客户端接收的消息也是有序的。  
-  前提：由于网络波动等原因，客户端后发送的消息时很有可能先得到服务端的sequenceId的，所以为了防止这个问题的发生，  
-  客户端需要保证在发送下一条消息时，确定上一条消息已经通过ack确认得到sequenceId了，否则不予以发送，在界面就是转圈圈等待或该条消息显示发送中。
-  如果在指定时间内迟迟都得不到确认，则认为失败，显示发送失败，发送失败的消息可重发。
+- 解决方案：
+    - 会话级序列号：严格递增的sequenceId + clientSeq
+    - 客户端保证：上条消息ACK确认后才发送下一条
+    - 服务端保证：分发系统维护消息顺序，单聊服务顺序处理
 
 
 - 具体实现：
@@ -250,34 +210,34 @@
             1. 收到完整的消息
             2. 保存消息到数据库
             3. 推送消息到rocketmq
-    
 
-
-### 如何保证消息的安全性
+### 消息安全性保障
 解决方案：
-- 为防止消息传输过程中不被截获、篡改、伪造，采用TLS传输层加密协议，netty提供了很好的支持,
-- 首次连接需要在tcp网关进行token校验，通过后连接通道才有效
+- 传输加密：TLS传输层加密
+- 连接认证：首次连接Token校验
 
 ### 收获与成长
-- 加深对netty框架的原理理解和使用，提升对基础通信框架和组件的开发能力
-- 加深对分布式系统的理解和落地实现，提升自身的项目架构设计能力
-- 加深对云原生、kubernetes、docker、jenkins的操作熟练度
-- 加深对spring cloud框架使用和理解，对抽取公共starter的开发和应用
-- 加深对nacos，rocket mq、redis中间件的原理理解和操作熟练度
-- 加深对juc包，线程池的异步编程使用和理解
-- 熟悉了多媒体流的应用层级使用和理解
-- 加深对桌面应用程序的开发熟练程度
-- 加深对于BS架构的理解，能够站在不同角度分析和处理问题，特别的是网络波动或异常这一块的处理
-- 有想法是一回事，真正落地实现和调试问题的过程才最为紧要，最后带来的是满满的成就
+- 深入掌握Netty框架原理与实战应用
+- 提升分布式系统架构设计与落地能力
+- 熟练云原生技术栈（K8s、Docker、Jenkins）
+- 精通Spring Cloud微服务架构
+- 熟练掌握中间件（Nacos、RocketMQ、Redis）
+- 增强异步编程与并发处理能力
+- 掌握多媒体流处理技术
+- 提升桌面应用开发能力
+- 深化网络异常处理经验
 
 
-### 参考借鉴
-- 参考了Java项目实战《IM即时通信系统》的架构设计
-- 参考了rocketmq5.2.0版本的底层netty通讯实现
-- 参考了GitHub项目JiChat的im是设计思想和实现
-- 参考了GitHub项目fastim的设计思想和实现
-- 本项目的示例demo很大一部分是通过AI一步一步修正来实现的。
+### 参考项目
+- Java项目实战《IM即时通信系统》
+- RocketMQ 5.2.0 Netty通信实现
+- GitHub项目JiChat设计思想
+- GitHub项目fastim实现方案
+- 部分功能通过AI辅助实现
 
 
 ### 交流
 个人邮箱：973667683@qq.com
+
+### 总结：
+从构思到实现，整个开发过程带来了丰富的技术收获和成就感。
