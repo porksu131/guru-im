@@ -2,10 +2,10 @@
 ## 项目介绍
 Guru IM 是一个基于分布式架构设计的高性能即时通讯系统，采用 Netty 框架实现实时消息传递，通过异步架构支持百万级并发连接。
 
-注：本项目为个人学习实践，主要用于技术记录、分享与交流。
+注：本项目为个人学习实践锻炼，在此主要用于技术记录、分享与交流。
 
 ## 项目功能
-- [x] 客户端sdk
+- [x] java sdk
 - [x] 接入示例
 - [x] 单聊功能
 - [X] 离线消息
@@ -18,6 +18,9 @@ Guru IM 是一个基于分布式架构设计的高性能即时通讯系统，采
 - [X] 视频通话
 - [X] 桌面共享
 - [ ] 多人会议
+- [ ] 位置共享
+- [ ] AI 对话
+- [ ] 红包功能
 - [ ] js sdk + electron + vue3
 
 ## 效果展示
@@ -48,6 +51,7 @@ Guru IM 是一个基于分布式架构设计的高性能即时通讯系统，采
 **视频通话**
 ![视频通话.png](asset/guru-im-demo-video-chat.gif)
 
+![视频通话.png](asset/guru-im-demo-video-chat-picture.png)
 **桌面共享**
 ![桌面共享.png](asset/guru-im-demo-screen-share.gif)
 
@@ -62,8 +66,8 @@ Guru IM 是一个基于分布式架构设计的高性能即时通讯系统，采
     - 桌面应用程序：Java Swing、Netty、SQLite、JavaCV、FFmpeg、JCEF、Mediasoup
 - 网关层：
     - TCP网关：Spring Boot、Netty、Nacos、Redis、LoadBalancer、HttpClient、JWT
-    - HTTP网关：Spring Cloud Gateway、LoadBalancer、Nacos、JWT
-- 分发层：spring boot、netty、nacos、redis、rocketmq
+    - HTTP网关：Spring Boot、Spring Cloud Gateway、LoadBalancer、Nacos、JWT
+- 分发层：Spring boot、Netty、Nacos、Redis、RocketMQ
 - 微服务层：
     - 单聊服务：Spring Boot Web、Nacos、RocketMQ、MySQL
     - 离线服务：Spring Boot Web、Nacos、RocketMQ、MySQL、Redis
@@ -233,7 +237,7 @@ guru-im/
 - RocketMQ 5.2.0 Netty通信实现
 - GitHub项目JiChat设计思想
 - GitHub项目fastim实现方案
-- 部分功能通过AI辅助实现
+- 前端页面部分功能通过AI辅助实现
 
 
 ### 交流

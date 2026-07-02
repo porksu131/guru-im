@@ -21,12 +21,7 @@ public class LoginFrame extends JFrame {
     private List<UserInfo> userList = new ArrayList<>();
 
     public LoginFrame() {
-        initUsers();
-        setupUI();
-    }
-
-    public LoginFrame(String environment) {
-        ApiService.init(environment);
+        ApiService.init();
         initUsers();
         setupUI();
     }

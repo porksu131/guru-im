@@ -65,6 +65,9 @@ public class UserSpecificJCEFManager {
 
             CefAppBuilder builder = new CefAppBuilder();
 
+            // 将jcef-bundle和jar一起打包，就不用使用时去下载了，因为下载挺慢的，130M左右，打包成exe安装后，会在app目录下。
+            builder.setInstallDir(new File("app/jcef-bundle"));
+
             // 设置应用处理器
             builder.setAppHandler(new MavenCefAppHandlerAdapter() {
                 @Override
@@ -108,8 +111,8 @@ public class UserSpecificJCEFManager {
             // 无沙盒模式
             builder.addJcefArgs("--no-sandbox");
 
-            // 远程调试端口
-             builder.addJcefArgs("--remote-debugging-port=" + getDebugPortForUser(userId));
+            // 远程调试端口，本地开发时可打开用于调试
+            // builder.addJcefArgs("--remote-debugging-port=" + getDebugPortForUser(userId));
             // 用户数据目录
             builder.addJcefArgs("--user-data-dir=" + userDataDir.getAbsolutePath());
 
@@ -208,8 +211,7 @@ public class UserSpecificJCEFManager {
 
             initialized = true;
 
-            logger.info("用户 {} JCEF初始化成功，调试地址: http://localhost:{}",
-                    userId, getDebugPortForUser(userId));
+            logger.info("用户 {} JCEF初始化成功！",userId);
 
         } catch (Exception e) {
             logger.error("用户 {} JCEF初始化失败", userId, e);

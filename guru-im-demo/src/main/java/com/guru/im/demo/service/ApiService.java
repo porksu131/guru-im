@@ -42,16 +42,11 @@ public class ApiService {
     public static final ObjectMapper objectMapper = new ObjectMapper();
     public static TokenManager tokenManager;
 
-    public static void init(String environment) {
-        if ("dev".equals(environment)) {
-            // 本地环境
-            ApiService.GATEWAY_HTTP_BASE_URL = "http://127.0.0.1:10921";
-            ApiService.GATEWAY_TCP_SERVER = "127.0.0.1:30420";
-        } else if ("k8s".equals(environment)) {
-            // k8s环境
-            ApiService.GATEWAY_HTTP_BASE_URL = "http://guru-im-gateway-http.com:32395";
-            ApiService.GATEWAY_TCP_SERVER = "guru-im-gateway-tcp.com:31030";
-        }
+    public static void init() {
+        String httpBaseUrl = ConfigManager.getString("gateway.http.base.url", "http://127.0.0.1:10921");
+        String tcpServer = ConfigManager.getString("gateway.tcp.server", "127.0.0.1:30420");
+        ApiService.GATEWAY_HTTP_BASE_URL = httpBaseUrl;
+        ApiService.GATEWAY_TCP_SERVER = tcpServer;
     }
 
     public static void setTokenManager(TokenManager tokenManager) {

@@ -12,7 +12,7 @@ public class GuruIM {
             e.printStackTrace();
         }
         SwingUtilities.invokeLater(() -> {
-            LoginFrame loginFrame = new LoginFrame("dev"); // dev/k8s
+            LoginFrame loginFrame = new LoginFrame();
             loginFrame.setVisible(true);
         });
     }

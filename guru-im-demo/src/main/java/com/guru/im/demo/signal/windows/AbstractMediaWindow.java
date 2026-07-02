@@ -4,8 +4,10 @@ import com.guru.im.demo.gui.MainFrame;
 import com.guru.im.demo.model.DeviceInfo;
 import com.guru.im.demo.model.UserInfo;
 import com.guru.im.demo.service.UserService;
+import com.guru.im.demo.signal.bridge.EmbeddedHttpServer;
 import com.guru.im.demo.signal.bridge.JCEFBridgeHandler;
 import com.guru.im.demo.signal.bridge.UserSpecificJCEFManager;
+import com.guru.im.demo.signal.bridge.WebResourceManager;
 import com.guru.im.demo.signal.manager.SignalingManager;
 import com.guru.im.protocol.model.MediaType;
 import com.guru.im.protocol.model.SignalingMessage;
@@ -21,6 +23,16 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.util.Enumeration;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 /**
  * 媒体窗口基础抽象类 - 使用新的jcefmaven
@@ -118,16 +130,7 @@ public abstract class AbstractMediaWindow extends JFrame {
     protected String getHtmlPageUrl(String htmlFile, String resourceFolder) {
         try {
             // 获取资源文件的绝对路径
-            java.net.URL resourceUrl = getClass().getClassLoader().getResource(resourceFolder + "/" + htmlFile);
-            if (resourceUrl != null) {
-                String path = java.net.URLDecoder.decode(resourceUrl.getPath(), "UTF-8");
-                // 确保路径格式正确
-                if (path.startsWith("/") || path.contains(":")) {
-                    return "file://" + path;
-                } else {
-                    return "file:///" + path;
-                }
-            }
+            return WebResourceManager.getHtmlPageUrl(htmlFile, resourceFolder);
         } catch (Exception e) {
             logger.error("获取资源路径失败", e);
         }
@@ -216,6 +219,8 @@ public abstract class AbstractMediaWindow extends JFrame {
             try {
                 browser.stopLoad();
                 // 注意：不要在这里关闭用户JCEF管理器，由用户会话管理
+                browser.setCloseAllowed();
+                browser.close(true);
             } catch (Exception e) {
                 logger.error("停止浏览器加载失败", e);
             }

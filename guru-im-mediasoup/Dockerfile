@@ -1,6 +1,9 @@
 # 使用 Node.js 20 官方镜像
 FROM node:20-alpine
 
+# 设置国内源
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
+
 # 安装 mediasoup 需要的系统依赖
 RUN apk add --no-cache \
     python3 \

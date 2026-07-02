@@ -10,10 +10,10 @@ spring:
     # Nacos 服务发现与注册配置
     nacos:
       discovery:
-        server-addr: 192.168.100.130:8848
+        server-addr: 192.168.2.130:8848
         namespace: ${spring.profiles.active}
       config:
-        server-addr: 192.168.100.130:8848
+        server-addr: 192.168.2.130:8848
         namespace: ${spring.profiles.active}
   config:
     import:
@@ -40,7 +40,7 @@ spring:
       password: 123456
 
 minio:
-  endpoint: http://192.168.100.130:9000
+  endpoint: http://192.168.2.130:9000
   access-key: minio
   secret-key: minio123
   chat-bucket: guru-im-chat-bucket

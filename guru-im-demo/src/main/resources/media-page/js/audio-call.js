@@ -525,6 +525,8 @@ class AudioCallApp {
             // 生产音频
             this.audioProducer = await this.mediasoupClient.produceAudio(this.audioStream);
 
+            Logger.info('sendTransportOptions:', sendTransportOptionsRes);
+            Logger.info('recvTransportOptions:', recvTransportOptionsRes);
             Logger.info('mediasoup初始化完成');
 
         } catch (error) {

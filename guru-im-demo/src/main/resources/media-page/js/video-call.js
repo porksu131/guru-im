@@ -18,6 +18,9 @@ class VideoCallApp {
         this.audioConsumer = null;
         this.videoConsumer = null;
 
+        // 音频元素
+        this.remoteAudioElement = null;
+
         // 视频元素
         this.localVideo = null;
         this.remoteVideo = null;
@@ -373,27 +376,41 @@ class VideoCallApp {
         try {
             Logger.info('初始化音视频设备...');
 
-            // 初始化设备管理器
+            if (this.deviceManager.isInitialized) {
+                Logger.info('设备已初始化，跳过');
+                return;
+            }
+
+            // 初始化设备管理器（内部会请求权限，视频失败只警告）
             await this.deviceManager.initialize();
 
-            // 检查音视频设备
+            // 音频设备是必须的
             if (!this.deviceManager.hasAudioDevice()) {
                 throw new Error('未找到可用的麦克风设备');
             }
 
-            if (!this.deviceManager.hasVideoDevice()) {
-                throw new Error('未找到可用的摄像头设备');
+            // 视频设备可选，只记录状态
+            this.hasVideo = this.deviceManager.hasVideoDevice();
+            if (!this.hasVideo) {
+                Logger.warn('未检测到摄像头，将仅使用音频通话');
+            } else {
+                Logger.info('摄像头设备可用');
             }
 
-            Logger.info('音视频设备初始化完成');
-
         } catch (error) {
-            Logger.error('设备初始化失败:', error);
-            await this.signalingHandler.devicesFailed({
-                sessionId: this.initData.sessionId,
-                error: error.message
-            });
-            throw error;
+            // 只有音频初始化失败才真正中断
+            if (!this.deviceManager || !this.deviceManager.hasAudioDevice()) {
+                Logger.error('音频设备初始化失败:', error);
+                await this.signalingHandler.devicesFailed({
+                    sessionId: this.initData.sessionId,
+                    error: error.message
+                });
+                throw error;
+            } else {
+                // 音频可用，但视频异常，降级
+                Logger.warn('音频可用，但视频初始化异常，降级为音频模式');
+                this.hasVideo = false;
+            }
         }
     }
 
@@ -439,7 +456,6 @@ class VideoCallApp {
             // 更新状态
             const status = this.isIncomingCall ? '视频来电中...' : '视频呼叫中...';
             document.getElementById('remoteStatus').textContent = status;
-            document.getElementById('callStatus').textContent = status;
 
             // 填充设备列表
             this.populateDeviceLists();
@@ -484,12 +500,12 @@ class VideoCallApp {
         try {
             Logger.info('开始发起视频通话...');
 
-            // 发起呼叫
-            await this.startCall();
-
             // 获取音视频流并显示本地视频
             await this.getMediaStreams();
             await this.showLocalVideo();
+
+            // 发起呼叫
+            await this.startCall();
 
             // 初始化mediasoup
             await this.initializeMediasoup();
@@ -539,32 +555,38 @@ class VideoCallApp {
     // 获取音视频流
     async getMediaStreams() {
         try {
-            // 获取音频设备
+            // 获取音频（必须）
             const audioDevice = document.getElementById('audioDeviceSelect').value;
             const audioConstraints = audioDevice ? { deviceId: audioDevice } : {};
-
-            // 获取视频设备
-            const videoDevice = document.getElementById('videoDeviceSelect').value;
-            const videoConstraints = videoDevice ? { deviceId: videoDevice } : {};
-
-            // 获取音频流
             const audioResult = await this.deviceManager.getAudioStream(audioConstraints);
             this.audioStream = audioResult.stream;
 
-            // 获取视频流
-            const videoResult = await this.deviceManager.getVideoStream(videoConstraints);
-            this.videoStream = videoResult.stream;
+            // 尝试获取视频（非必须）
+            try {
+                const videoDevice = document.getElementById('videoDeviceSelect').value;
+                const videoConstraints = videoDevice ? { deviceId: videoDevice } : {};
+                const videoResult = await this.deviceManager.getVideoStream(videoConstraints);
+                this.videoStream = videoResult.stream;
+                this.hasVideo = true;
+            } catch (videoError) {
+                Logger.warn('获取视频流失败（可能被占用），仅使用音频:', videoError.message);
+                this.videoStream = null;
+                this.hasVideo = false;
+                this.showNotification('本地摄像头不可用');
+            }
 
-            // 合并流用于本地显示
-            this.localStream = new MediaStream([
-                ...this.audioStream.getAudioTracks(),
-                ...this.videoStream.getVideoTracks()
-            ]);
+            // 构建本地流（包含视频轨道如果有）
+            const tracks = [...this.audioStream.getAudioTracks()];
+            if (this.videoStream) {
+                tracks.push(...this.videoStream.getVideoTracks());
+            }
+            this.localStream = new MediaStream(tracks);
 
-            Logger.info('音视频流获取成功');
+            Logger.info('本地流获取成功，视频可用:', !!this.videoStream);
 
         } catch (error) {
-            Logger.error('获取音视频流失败:', error);
+            // 音频获取失败才抛出
+            Logger.error('获取音频流失败:', error);
             throw error;
         }
     }
@@ -574,15 +596,18 @@ class VideoCallApp {
         try {
             if (this.localVideo && this.localStream) {
                 this.localVideo.srcObject = this.localStream;
-
-                // 隐藏本地视频占位符
-                document.getElementById('localVideoPlaceholder').classList.add('hidden');
-
-                Logger.info('本地视频显示成功');
+                const placeholder = document.getElementById('localVideoPlaceholder');
+                if (!this.videoStream) {
+                    placeholder.classList.remove('hidden');
+                    placeholder.innerHTML = '<i class="fas fa-microphone"></i> 仅音频';
+                } else {
+                    placeholder.classList.add('hidden');
+                }
+                Logger.info('本地视频显示成功（视频:', !!this.videoStream, '）');
             }
         } catch (error) {
             Logger.error('显示本地视频失败:', error);
-            throw error;
+            // 不抛出，允许音频继续
         }
     }
 
@@ -628,9 +653,16 @@ class VideoCallApp {
             const recvTransportOptions = JSON.parse(JSON.parse(recvTransportOptionsRes).transportCreate.transportOptions);
             await this.mediasoupClient.createRecvTransport(recvTransportOptions);
 
-            // 生产音视频
+            // 生产音频
             this.audioProducer = await this.mediasoupClient.produceAudio(this.audioStream);
-            this.videoProducer = await this.mediasoupClient.produceVideo(this.videoStream);
+
+            // 生产视频（仅当有视频流）
+            if (this.videoStream) {
+                this.videoProducer = await this.mediasoupClient.produceVideo(this.videoStream);
+            } else {
+                this.videoProducer = null;
+                Logger.info('无视频流，不创建视频生产者');
+            }
 
             Logger.info('mediasoup初始化完成');
 
@@ -665,7 +697,6 @@ class VideoCallApp {
             // 更新状态
             this.isCallActive = true;
             document.getElementById('remoteStatus').textContent = '通话中';
-            document.getElementById('callStatus').textContent = '通话中';
 
             // 显示控制按钮
             document.getElementById('controls').classList.add('active');
@@ -737,15 +768,17 @@ class VideoCallApp {
     // 播放远程音频
     async playRemoteAudio(track) {
         try {
-            const remoteAudioStream = new MediaStream([track]);
-
-            // 使用远程视频元素播放音频
-            if (this.remoteVideo) {
-                this.remoteVideo.srcObject = remoteAudioStream;
+            if (!this.remoteAudioElement) {
+                this.remoteAudioElement = document.createElement('audio');
+                this.remoteAudioElement.autoplay = true;
+                this.remoteAudioElement.volume = 1.0;
+                this.remoteAudioElement.style.display = 'none'; // 隐藏
+                document.body.appendChild(this.remoteAudioElement);
             }
-
-            Logger.info('远程音频播放开始');
-
+            const stream = new MediaStream([track]);
+            this.remoteAudioElement.srcObject = stream;
+            await this.remoteAudioElement.play();
+            Logger.info('远程音频播放已启动');
         } catch (error) {
             Logger.error('播放远程音频失败:', error);
         }
@@ -768,6 +801,21 @@ class VideoCallApp {
         } catch (error) {
             Logger.error('显示远程视频失败:', error);
         }
+    }
+
+    showNotification(message) {
+        // 简单 Toast 提示
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification';
+        toast.textContent = message;
+        toast.style.cssText = `
+        position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+        background: rgba(0,0,0,0.8); color: white; padding: 10px 20px;
+        border-radius: 8px; z-index: 9999; font-size: 14px;
+        animation: fadeInUp 0.3s ease;
+    `;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
     }
 
     // 拒绝通话
@@ -799,7 +847,8 @@ class VideoCallApp {
 
             await this.signalingHandler.callCancelled({
                 sessionId: this.initData.sessionId,
-                targetUserId: this.initData.targetUserId
+                targetUserId: this.initData.targetUserId,
+                reason: '用户主动取消'
             });
             this.endCall('视频通话已取消');
 
@@ -817,9 +866,10 @@ class VideoCallApp {
 
             await this.signalingHandler.callEnded({
                 sessionId: this.initData.sessionId,
-                targetUserId: this.initData.targetUserId
+                targetUserId: this.initData.targetUserId,
+                reason: '用户主动挂断'
             });
-            this.endCall('视频通话已结束');
+            this.endCall('视频通话已挂断');
 
         } catch (error) {
             Logger.error('挂断视频通话失败:', error);
@@ -828,30 +878,105 @@ class VideoCallApp {
 
     // 结束通话
     endCall(message) {
+        Logger.info(`结束通话: ${message}`);
+
+        // 停止所有音效
+        this.stopAllSounds(); // 内部调用了 stopRingtone 和 stopCallTone
+
+        // 停止所有超时计时器
         this.stopAllTimeouts();
+
+        // 停止通话计时器
         this.stopCallTimer();
-        this.stopAllSounds();
-        this.cleanupMediaStreams();
 
-        if (this.isCallActive) {
-            this.showNotification(message);
-        }
+        // 隐藏所有操作按钮（来电/去电/控制）
+        const incomingActions = document.getElementById('incomingCallActions');
+        if (incomingActions) incomingActions.classList.add('hidden');
 
-        // 通知Java端通话结束
-        if (window.JCefClient) {
-            window.JCefClient.callEnded(JSON.stringify({
-                sessionId: this.initData.sessionId,
-                targetUserId: this.initData.targetUserId,
-                duration: this.getCallDuration()
-            }));
-        }
+        const outgoingActions = document.getElementById('outgoingCallActions');
+        if (outgoingActions) outgoingActions.classList.add('hidden');
 
-        // 关闭窗口
+        const controls = document.getElementById('controls');
+        if (controls) controls.classList.remove('active');
+
+        // 重置头部和计时器样式
+        const header = document.getElementById('header');
+        if (header) header.classList.remove('call-active');
+
+        const timerEl = document.getElementById('timer');
+        if (timerEl) timerEl.classList.remove('active');
+
+        // 标记通话非活跃
+        this.isCallActive = false;
+
+        // 清理资源（媒体流 + mediasoup）
+        this.cleanup();
+
+        // 显示结束信息
+        this.showCallEnded(message);
+
+        // 延迟关闭窗口
         setTimeout(() => {
-            if (window.JCefClient) {
-                window.JCefClient.closeWindow();
-            }
+            this.signalingHandler.closeWindow();
         }, 2000);
+    }
+
+    // 清理所有资源（媒体流 + mediasoup）
+    cleanup() {
+        // 停止所有媒体流
+        if (this.deviceManager) {
+            this.deviceManager.stopAllStreams();
+        }
+
+        // 关闭 mediasoup 生产者/消费者和传输
+        if (this.mediasoupClient) {
+            // 关闭生产者
+            if (this.audioProducer) {
+                this.mediasoupClient.closeProducer(this.audioProducer.id);
+                this.audioProducer = null;
+            }
+            if (this.videoProducer) {
+                this.mediasoupClient.closeProducer(this.videoProducer.id);
+                this.videoProducer = null;
+            }
+            // 关闭消费者
+            if (this.audioConsumer) {
+                this.mediasoupClient.closeConsumer(this.audioConsumer.id);
+                this.audioConsumer = null;
+            }
+            if (this.videoConsumer) {
+                this.mediasoupClient.closeConsumer(this.videoConsumer.id);
+                this.videoConsumer = null;
+            }
+            // 关闭传输
+            this.mediasoupClient.closeAll();
+        }
+
+
+        // 释放本地流引用
+        this.audioStream = null;
+        this.videoStream = null;
+        this.localStream = null;
+
+        Logger.info('资源清理完成');
+    }
+
+    showCallEnded(reason) {
+        // 更新状态显示
+        const statusEl = document.getElementById('remoteStatus');
+        if (statusEl) {
+            statusEl.textContent = reason;
+        }
+        // 隐藏计时器显示
+        const timerEl = document.getElementById('timer');
+        if (timerEl) {
+            timerEl.classList.add('hidden');
+        }
+        // 隐藏控制栏
+        const controls = document.getElementById('controls');
+        if (controls) {
+            controls.classList.remove('active');
+        }
     }
 
     // 静音/取消静音
@@ -1093,48 +1218,74 @@ class VideoCallApp {
         }
     }
 
-    // 开始接听超时
+    // 启动接听超时计时器（接收方）
     startAnswerTimeout() {
-        setTimeout(() => {
-            if (!this.isCallActive) {
-                Logger.warn('接听超时，自动拒绝视频通话');
-                this.rejectCall();
-            }
+        this.stopAllTimeouts(); // 先停止所有超时计时器
+
+        Logger.info(`启动接听超时计时器: ${this.answerTimeoutDuration}ms`);
+
+        this.answerTimeoutTimer = setTimeout(async () => {
+            Logger.warn('接听超时，自动结束通话');
+
+            // 停止振铃音
+            this.stopRingtone();
+
+            // 发送接听超时信令
+            await this.signalingHandler.callTimeout({
+                sessionId: this.initData.sessionId,
+                targetUserId: this.initData.targetUserId,
+                timeoutType: 'ANSWER_TIMEOUT',
+                reason: '接听超时（30秒）'
+            });
+
+            this.endCall('接听超时');
+
         }, this.answerTimeoutDuration);
     }
 
-    // 开始呼叫超时
+    // 启动呼叫超时计时器（发起方）
     startCallTimeout() {
-        setTimeout(() => {
-            if (!this.isCallActive) {
-                Logger.warn('呼叫超时，自动取消视频通话');
-                this.cancelCall();
-            }
+        this.stopAllTimeouts(); // 先停止所有超时计时器
+
+        Logger.info(`启动呼叫超时计时器: ${this.callTimeoutDuration}ms`);
+
+        this.callTimeoutTimer = setTimeout(async () => {
+            Logger.warn('呼叫超时，自动结束通话');
+
+            // 停止呼叫音
+            this.stopCallTone();
+
+            // 发送呼叫超时信令
+            await this.signalingHandler.callTimeout({
+                sessionId: this.initData.sessionId,
+                targetUserId: this.initData.targetUserId,
+                timeoutType: 'CALL_TIMEOUT',
+                reason: '呼叫超时（35秒）'
+            });
+
+            this.endCall('呼叫超时，对方未接听');
+
         }, this.callTimeoutDuration);
     }
 
     // 停止所有超时
     stopAllTimeouts() {
-        // 这里可以添加具体的超时清理逻辑
+        if (this.answerTimeoutTimer) {
+            clearTimeout(this.answerTimeoutTimer);
+            this.answerTimeoutTimer = null;
+            Logger.info('停止接听超时计时器');
+        }
+        if (this.callTimeoutTimer) {
+            clearTimeout(this.callTimeoutTimer);
+            this.callTimeoutTimer = null;
+            Logger.info('停止呼叫超时计时器');
+        }
     }
 
     // 停止所有音效
     stopAllSounds() {
         this.stopRingtone();
         this.stopCallTone();
-    }
-
-    // 清理媒体流
-    cleanupMediaStreams() {
-        if (this.audioStream) {
-            this.audioStream.getTracks().forEach(track => track.stop());
-        }
-        if (this.videoStream) {
-            this.videoStream.getTracks().forEach(track => track.stop());
-        }
-        if (this.localStream) {
-            this.localStream.getTracks().forEach(track => track.stop());
-        }
     }
 
     // 获取通话时长
@@ -1144,17 +1295,73 @@ class VideoCallApp {
         return Math.floor((endTime - this.callStartTime) / 1000);
     }
 
-    // 显示通知
-    showNotification(message) {
-        // 实现通知显示逻辑
-        Logger.info('通知:', message);
+    // 显示错误信息
+    showError(message) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-message';
+        errorDiv.textContent = message;
+        document.body.appendChild(errorDiv);
+
+        setTimeout(() => {
+            errorDiv.remove();
+        }, 5000);
     }
 
-    // 显示错误
-    showError(message) {
-        // 实现错误显示逻辑
-        Logger.error('错误:', message);
+
+    // 处理对方接受通话
+    handleCallAccepted() {
+        Logger.info('对方已接受视频通话');
+
+        // 停止呼叫音和超时计时器
+        this.stopCallTone();
+        this.stopAllTimeouts();
+
+        this.isCallActive = true;
+        this.startCallTimer();
+
+        // 更新状态
+        document.getElementById('remoteStatus').textContent = '通话中';
+        document.getElementById('callTimer')?.classList.add('active');
+
+        // 隐藏去电等待界面，显示控制按钮
+        document.getElementById('outgoingCallActions').classList.add('hidden');
+        document.getElementById('controls').classList.add('active');
+
+        // 消费远程媒体
+        this.consumeRemoteMedia(this.roomId || `room_${this.initData.sessionId}`);
     }
+
+    // 处理对方拒绝通话
+    handleCallRejected(reason) {
+        Logger.info(`通话被拒绝: ${reason}`);
+        this.stopCallTone();
+        this.playHangupTone();
+        this.endCall(`${reason}`);
+    }
+
+    // 处理对方挂断
+    handleCallHangup() {
+        Logger.info('对方已挂断通话');
+        this.stopCallTone();
+        this.playHangupTone();
+        this.endCall('对方已挂断');
+    }
+
+    // 处理对方取消
+    handleCallCancel() {
+        Logger.info('对方已取消通话');
+        this.stopCallTone();
+        this.playHangupTone();
+        this.endCall('对方已取消');
+    }
+
+    // 处理超时
+    handleCallTimeout() {
+        Logger.warn('通话超时');
+        this.stopCallTone();
+        this.endCall('通话超时');
+    }
+
 }
 
 
@@ -1162,3 +1369,34 @@ class VideoCallApp {
 document.addEventListener('DOMContentLoaded', () => {
     window.videoCallApp = new VideoCallApp();
 });
+
+// 全局函数供 Java 端调用
+window.handleCallAccepted = function () {
+    if (window.videoCallApp) {
+        window.videoCallApp.handleCallAccepted();
+    }
+};
+
+window.handleCallRejected = function (reason) {
+    if (window.videoCallApp) {
+        window.videoCallApp.handleCallRejected(reason);
+    }
+};
+
+window.handleCallHangup = function () {
+    if (window.videoCallApp) {
+        window.videoCallApp.handleCallHangup();
+    }
+};
+
+window.handleCallCancel = function () {
+    if (window.videoCallApp) {
+        window.videoCallApp.handleCallCancel();
+    }
+};
+
+window.handleCallTimeout = function () {
+    if (window.videoCallApp) {
+        window.videoCallApp.handleCallTimeout();
+    }
+};

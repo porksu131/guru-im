@@ -63,7 +63,7 @@ listening-port=3478
 tls-listening-port=5349
 
 # 外部IP - 如果是本地测试使用127.0.0.1，生产环境请替换为公网IP
-external-ip=192.168.100.130
+external-ip=192.168.2.130
 
 # Realm配置
 realm=local.webrtc.test

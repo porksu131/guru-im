@@ -159,7 +159,7 @@ services:
       - NODE_ENV=production
       - MEDIA_PORT=3000
       - MEDIA_HOST=0.0.0.0
-      - ANNOUNCED_IP=192.168.100.130  # 服务器IP
+      - ANNOUNCED_IP=192.168.2.130  # 服务器IP
       - TURN_SERVER=coturn
       - TURN_PORT=3478
       - TURN_USERNAME=coturn

@@ -44,5 +44,5 @@ rocketmq:
 # mediasoup配置
 mediasoup:
   http:
-    host: 192.168.100.130
+    host: 192.168.2.130
     port: 3000

@@ -79,9 +79,9 @@ module.exports = {
                 },
                 {
                     urls: [
-                        `turn:${process.env.TURN_SERVER || '192.168.100.130'}:${process.env.TURN_PORT || '3478'}`,
-                        `turn:${process.env.TURN_SERVER || '192.168.100.130'}:${process.env.TURN_PORT || '3478'}?transport=tcp`,
-                        `turns:${process.env.TURN_SERVER || '192.168.100.130'}:${process.env.TURN_PORT || '5349'}`
+                        `turn:${process.env.TURN_SERVER || '192.168.2.130'}:${process.env.TURN_PORT || '3478'}`,
+                        `turn:${process.env.TURN_SERVER || '192.168.2.130'}:${process.env.TURN_PORT || '3478'}?transport=tcp`,
+                        `turns:${process.env.TURN_SERVER || '192.168.2.130'}:${process.env.TURN_PORT || '5349'}`
                     ],
                     username: process.env.TURN_USERNAME || 'coturn',
                     credential: process.env.TURN_PASSWORD || 'coturn'

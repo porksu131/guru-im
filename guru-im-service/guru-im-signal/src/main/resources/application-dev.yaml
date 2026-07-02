@@ -3,10 +3,10 @@ spring:
     # Nacos 服务发现与注册配置
     nacos:
       discovery:
-        server-addr: 192.168.100.130:8848
+        server-addr: 192.168.2.130:8848
         namespace: ${spring.profiles.active}
       config:
-        server-addr: 192.168.100.130:8848
+        server-addr: 192.168.2.130:8848
         namespace: ${spring.profiles.active}
   config:
     import:
@@ -14,7 +14,7 @@ spring:
 
   # mysql连接配置
   datasource:
-    url: jdbc:mysql://192.168.100.130:3306/guru_im?useLegacyDatetimeCode=false&timeZone=Asia/Shanghai&rewriteBatchedStatements=true&allowMultiQueries=true&characterEncoding=utf8&connectTimeout=3000&socketTimeout=3000&autoReconnect=true&useSSL=false&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://192.168.2.130:3306/guru_im?useLegacyDatetimeCode=false&timeZone=Asia/Shanghai&rewriteBatchedStatements=true&allowMultiQueries=true&characterEncoding=utf8&connectTimeout=3000&socketTimeout=3000&autoReconnect=true&useSSL=false&allowPublicKeyRetrieval=true
     username: guru_im
     password: mysql1234!
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -22,7 +22,7 @@ spring:
   data:
     # Redis配置
     redis:
-      host: 192.168.100.130
+      host: 192.168.2.130
       port: 6379
       password: redis1234!
 
@@ -34,7 +34,7 @@ mybatis:
 
 # rocketMQ配置
 rocketmq:
-  name-server: 192.168.100.130:9876  # NameServer 地址，集群使用';'隔开
+  name-server: 192.168.2.130:9876  # NameServer 地址，集群使用';'隔开
   producer:
     group: signal-producer-group  # 生产者组名称
     send-message-timeout: 3000
@@ -46,5 +46,5 @@ rocketmq:
 # mediasoup配置
 mediasoup:
   http:
-    host: 192.168.100.130
+    host: 192.168.2.130
     port: 3000
